@@ -28,7 +28,8 @@ AWDoc - это инструмент на Go для анализа исходно
 - Документирует каждый пакет и элемент
 - Включает анализ архитектуры
 - Выделяет проблемы и риски
-- Выводит в Markdown (HTML - в разработке)
+- **Markdown формат:** структурированная документация для Git
+- **HTML формат:** красивый интерактивный веб-интерфейс с адаптивным дизайном
 
 ## 🚀 Быстрый старт
 
@@ -46,8 +47,11 @@ go build -o awdoc main.go
 ### Использование
 
 ```bash
-# Анализируем проект (результат сохранится в output/analysis.md)
+# Анализируем проект (результат сохранится в output/analysis.md - Markdown)
 ./awdoc -source ./myproject -lang go
+
+# Генерируем HTML документацию
+./awdoc -source ./myproject -lang go -format html
 
 # Анализируем конкретный пакет
 ./awdoc -source ./pkg -lang go
@@ -55,11 +59,14 @@ go build -o awdoc main.go
 # С пользовательской папкой для результатов
 ./awdoc -source ./myproject -output-dir ./documentation
 
-# С пользовательским именем файла
-./awdoc -source ./myproject -output ./custom-docs/api.md
+# С пользовательским именем файла (HTML)
+./awdoc -source ./myproject -format html -output ./docs/api.html
 
-# Смотрим результат
+# Смотрим результат (Markdown)
 cat output/analysis.md
+
+# Открываем HTML в браузере (Windows)
+start output/analysis.html
 ```
 
 ## 📊 Пример выходных данных
@@ -171,11 +178,12 @@ graph TD
 awdoc [flags]
 
 Flags:
-  -source      Directory to analyze (default: ".")
-  -lang        Programming language: go, python, rust (default: "go")
-  -output      Output file path (overrides -output-dir)
-  -output-dir  Output directory for documentation (default: "output")
-  -format      Output format: markdown, html (default: "markdown")
+  -source      Директория для анализа (по умолчанию: ".")
+  -lang        Язык программирования: go, python, rust (по умолчанию: "go")
+  -output      Путь к файлу результата (приоритет над -output-dir)
+  -output-dir  Папка для документации (по умолчанию: "output")
+  -format      Формат вывода: markdown или html (по умолчанию: "markdown")
+  -help        Показать справку
 
 ```
 
@@ -191,11 +199,14 @@ Flags:
 # С пользовательской папкой для результатов
 ./awdoc -source ./src -output-dir ./docs
 
-# С пользовательским путём к файлу
+# С пользовательским путём к файлу (Markdown)
 ./awdoc -source . -output ./results/api-docs.md
 
-# HTML выход (когда реализуется)
-./awdoc -source . -lang go -format html -output-dir ./html-docs
+# HTML выход - красивая веб-документация
+./awdoc -source . -lang go -format html -output docs/api.html
+
+# HTML в директорию по умолчанию
+./awdoc -source . -lang go -format html
 ```
 
 ## 🎓 Примеры использования
@@ -211,7 +222,11 @@ Flags:
 ### 2. Сложная архитектура
 
 ```bash
+# Markdown версия
 ./awdoc -source ./examples/complex -lang go -output output/arch-analysis.md
+
+# HTML версия (интерактивный веб-интерфейс)
+./awdoc -source ./examples/complex -lang go -format html -output output/arch-analysis.html
 ```
 
 Результат: анализ 4 пакетов, выявление слоев и зависимостей
@@ -365,11 +380,37 @@ analyze:
 - **ОС:** Linux, macOS, Windows
 - **Зависимости:** Только стандартная библиотека Go
 
+## � HTML Формат (НОВОЕ!)
+
+### Особенности
+
+- ✅ **Адаптивный дизайн** - работает на всех устройствах
+- ✅ **Встроенные стили** - красивый градиентный интерфейс
+- ✅ **Навигационное меню** - быстрая навигация по разделам
+- ✅ **Статистические карточки** - визуализация метрик
+- ✅ **Без зависимостей** - чистый HTML+CSS
+
+### Примеры HTML
+
+```bash
+# Базовая генерация
+./awdoc -source . -format html
+
+# С пользовательским путём
+./awdoc -source ./pkg -format html -output docs/architecture.html
+
+# Откройте в браузере
+start output/analysis.html  # Windows
+open output/analysis.html   # macOS
+xdg-open output/analysis.html  # Linux
+```
+
 ## 🔮 Будущие улучшения
 
 ### Высокий приоритет
 
-- [ ] HTML генератор с интерактивными диаграммами
+- [x] HTML генератор с адаптивным дизайном (ГОТОВО!)
+- [ ] HTML с интерактивными диаграммами (Mermaid/GraphViz)
 - [ ] Поддержка Python, Rust, C++
 - [ ] Web интерфейс для просмотра документации
 - [ ] VS Code расширение

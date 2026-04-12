@@ -25,13 +25,23 @@ A powerful Go-based tool for analyzing source code and generating comprehensive 
 
 ### 3. **Documentation Generator** (`pkg/generator/`)
 
-- Generates structured API documentation
-- Markdown output with:
+- Generates structured API documentation in multiple formats:
+  
+  **Markdown Format:**
   - Package overview
   - Exported and internal API documentation
   - Architecture analysis with diagrams (text-based)
   - Dependency graph visualization
   - Quality warnings and recommendations
+  
+  **HTML Format (NEW):**
+  - Responsive web interface
+  - Beautiful gradient design with modern CSS
+  - Interactive navigation menu
+  - Statistical cards with key metrics
+  - Collapsible sections for better readability
+  - Mobile-friendly responsive layout
+  - Embedded styles (no external dependencies)
 
 ## Project Structure
 
@@ -84,15 +94,40 @@ go run main.go -source ./examples -lang go -output docs.md
 ### Basic Usage
 
 ```bash
-# Analyze current directory
+# Analyze current directory (Markdown output)
 ./awdoc -source . -lang go -output api-docs.md
 
 # Analyze a specific package
 ./awdoc -source ./pkg -lang go -output pkg-docs.md
 
-# Generate HTML documentation (future feature)
+# Generate HTML documentation
 ./awdoc -source . -lang go -format html -output docs.html
+
+# Generate HTML with custom styling
+./awdoc -source ./examples/complex -lang go -format html -output api.html
+
+# Open HTML documentation in browser
+start docs.html  # Windows
+open docs.html   # macOS
+xdg-open docs.html  # Linux
 ```
+
+### Output Formats
+
+#### Markdown Format (default)
+
+- Perfect for Git repositories
+- Works with GitHub, GitLab rendering
+- Easy to version control
+- Command: `./awdoc -format markdown` (or omit -format)
+
+#### HTML Format
+
+- Beautiful visual presentation
+- No dependencies required (embedded CSS)
+- Responsive mobile-friendly design
+- Easy sharing and publishing
+- Command: `./awdoc -format html`
 
 ### Command Line Options
 
@@ -170,6 +205,7 @@ The analyzer combines multiple factors to identify god objects:
 ## Future Enhancements
 
 - [ ] Support for multiple languages (Python, Rust, C++, etc.)
+- [x] Basic HTML output with responsive design
 - [ ] Interactive HTML output with diagrams (Mermaid/GraphViz)
 - [ ] Web interface for browsing documentation
 - [ ] Integration with common CI/CD systems
@@ -177,6 +213,8 @@ The analyzer combines multiple factors to identify god objects:
 - [ ] Export to multiple formats (JSON, XML, etc.)
 - [ ] Test coverage integration
 - [ ] Performance metrics and profiling info
+- [ ] Dark mode for HTML documentation
+- [ ] Search functionality in HTML output
 
 ## Contributing
 

@@ -24,6 +24,21 @@ cat output/analysis.md
 ./awdoc -source . -lang go -output-dir ./docs
 ```
 
+### 4. Генерация документации в HTML формате
+
+```bash
+# HTML документация в output/analysis.html (красивый интерфейс)
+./awdoc -source . -lang go -format html
+
+# Или с пользовательским путем
+./awdoc -source . -lang go -format html -output docs/api.html
+
+# Откройте в браузере
+open output/analysis.html  # macOS
+xdg-open output/analysis.html  # Linux
+start output/analysis.html  # Windows
+```
+
 ## CLI Options
 
 ```text
@@ -423,3 +438,116 @@ chmod +x analyze-project.sh
    # Анализируйте только интересующие папки
    ./awdoc -source ./pkg/core -lang go -output core-analysis.md
    ```
+
+## HTML Format (новый функционал)
+
+### Описание
+
+HTML формат генерирует красивую интерактивную документацию с встроенными стилями CSS. Подходит для публикации в веб и просмотра в браузере.
+
+### Особенности HTML формата:
+
+- 📱 **Адаптивный дизайн** - работает на всех устройствах
+- 🎨 **Красивая стилизация** - профессиональный внешний вид с градиентами и анимациями
+- 🔗 **Навигационное меню** - быстрая навигация по разделам
+- 📊 **Статистические карточки** - визуальное представление метрик
+- 🏗️ **Архитектурный анализ** - слои, циклические зависимости, сложные пакеты
+- 🛡️ **Экранирование HTML** - безопасные спецсимволы
+
+### Примеры использования
+
+#### Базовая генерация HTML документации
+
+```bash
+# Генерируем HTML документацию в output/analysis.html
+./awdoc -source . -lang go -format html
+
+# Открываем в браузере (Windows)
+start output/analysis.html
+```
+
+#### HTML документация для конкретного пакета
+
+```bash
+# Анализируем пакет pkg и генерируем HTML
+./awdoc -source ./pkg -lang go -format html -output ./docs/pkg.html
+```
+
+#### HTML с пользовательским именем файла
+
+```bash
+# Генерируем несколько HTML отчётов для разных частей проекта
+./awdoc -source ./pkg/analyzer -lang go -format html -output ./docs/analyzer.html
+./awdoc -source ./pkg/generator -lang go -format html -output ./docs/generator.html
+./awdoc -source ./pkg/parser -lang go -format html -output ./docs/parser.html
+```
+
+### HTML документ содержит
+
+1. **Header с заголовком** - красивый градиентный фон
+2. **Навигационное меню** - ссылки на основные разделы:
+   - Overview (обзор)
+   - Packages (пакеты)
+   - Architecture (архитектура)
+   - Statistics (статистика)
+
+3. **Overview раздел**:
+   - Количество пакетов
+   - Количество элементов
+   - Количество циклических зависимостей
+   - Количество сложных пакетов
+
+4. **Packages раздел**:
+   - Для каждого пакета:
+     - Название и описание
+     - Список импортов
+     - Экспортируемые элементы (функции, методы, типы, интерфейсы, константы)
+     - Внутренние элементы
+     - Сигнатуры и документация
+
+5. **Architecture раздел**:
+   - Архитектурные слои с пакетами
+   - Выявленные циклические зависимости
+   - Сложные пакеты ("god objects")
+   - Граф зависимостей
+
+6. **Statistics раздел**:
+   - Количество функций
+   - Количество методов
+   - Количество типов
+   - Количество структур
+   - Количество интерфейсов
+   - Количество архитектурных слоёв
+
+7. **Footer** - информация о генераторе
+
+### Сравнение форматов
+
+| Функция | Markdown | HTML |
+|---------|----------|------|
+| Просмотр в текстовом редакторе | ✅ | ❌ |
+| Просмотр в браузере | ⚠️ (raw) | ✅ |
+| Красивое форматирование | ✅ | ✅✅ |
+| Адаптивный дизайн | ❌ | ✅ |
+| Встроенные стили | ❌ | ✅ |
+| Размер файла | Меньше | Больше |
+| Для документации в Git | ✅ | ⚠️ |
+| Для веб-публикации | ⚠️ | ✅ |
+
+### Интеграция в CI/CD
+
+```yaml
+# Пример для GitHub Actions
+- name: Generate API Documentation
+  run: |
+    # Генерируем Markdown для Git
+    ./awdoc -source . -lang go -format markdown -output docs/api.md
+    
+    # Генерируем HTML для веб-сайта
+    ./awdoc -source . -lang go -format html -output docs/index.html
+    
+    # Коммитим документацию
+    git add docs/
+    git commit -m "Update auto-generated documentation"
+    git push
+```

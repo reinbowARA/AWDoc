@@ -62,39 +62,58 @@ main() {
     print_section "3. Analyzing entire AWDoc project"
     ./awdoc -source ./pkg -lang go -output output/internal-analysis.md
     print_success "Generated output/internal-analysis.md"
+
+    # Demo 4: HTML Format (NEW)
+    print_section "4. Generating HTML documentation (NEW FORMAT)"
+    ./awdoc -source ./examples/complex -lang go -format html -output output/api.html
+    print_success "Generated output/api.html"
+    echo "  Open in browser: Open the HTML file in your web browser"
+    echo ""
+    
+    # Demo 4b: Multiple HTML reports
+    print_section "4b. Generating HTML for all examples"
+    ./awdoc -source ./examples/sample -lang go -format html -output output/sample.html
+    print_success "Generated output/sample.html"
     
     # Show statistics
-    print_section "4. Statistics"
+    print_section "5. Statistics"
     echo ""
     echo "Generated files:"
     echo "  - output/analysis.md: $(wc -l < output/analysis.md) lines"
     echo "  - output/complex-analysis.md: $(wc -l < output/complex-analysis.md) lines"
     echo "  - output/internal-analysis.md: $(wc -l < output/internal-analysis.md) lines"
+    echo "  - output/api.html: $(wc -l < output/api.html) lines"
+    echo "  - output/sample.html: $(wc -l < output/sample.html) lines"
     
     # Test examples
-    print_section "5. Running unit tests"
+    print_section "6. Running unit tests"
     go test -v ./pkg/... -run TestAnalyzer
     print_success "Tests passed"
     
     # Show features
-    print_section "6. Key Features Demonstrated"
+    print_section "7. Key Features Demonstrated"
     echo ""
     echo "  ✓ Code parsing and AST analysis"
     echo "  ✓ API documentation extraction"
     echo "  ✓ Dependency graph construction"
     echo "  ✓ Package complexity analysis"
     echo "  ✓ Markdown document generation"
+    echo "  ✓ HTML document generation (NEW)"
     echo "  ✓ Architecture layer detection"
+    echo "  ✓ Responsive HTML design (NEW)"
     echo ""
     
-    print_section "7. Next Steps"
+    print_section "8. Next Steps"
     echo ""
     echo "Try these commands:"
-    echo "  - View generated docs: cat output/analysis.md"
-    echo "  - Analyze your project: ./awdoc -source /path/to/project"
+    echo "  - View Markdown docs: cat output/analysis.md"
+    echo "  - Open HTML docs: open output/api.html (macOS) or start output/api.html (Windows)"
+    echo "  - Analyze your project (Markdown): ./awdoc -source /path/to/project"
+    echo "  - Analyze your project (HTML): ./awdoc -source /path/to/project -format html"
     echo "  - Custom output dir: ./awdoc -source . -output-dir ./docs"
+    echo "  - Custom HTML output: ./awdoc -source . -format html -output ./docs/api.html"
     echo "  - Run tests: go test -v ./..."
-    echo "  - Read docs: cat README.md"
+    echo "  - Read docs: cat README.md or cat USAGE_EXAMPLES.md"
     echo ""
     
     print_header "Demo Complete!"

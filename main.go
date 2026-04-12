@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 func main() {
@@ -36,7 +37,26 @@ func main() {
 	// Если outputFile не указан, используем значение по умолчанию
 	finalOutputFile := *outputFile
 	if finalOutputFile == "" {
-		finalOutputFile = filepath.Join(*outputDir, "analysis.md")
+		// Определяем правильное расширение в зависимости от формата
+		ext := ".md"
+		if *format == "html" {
+			ext = ".html"
+		}
+		finalOutputFile = filepath.Join(*outputDir, "analysis"+ext)
+	} else if finalOutputFile != "" && *outputFile == "" {
+		// Если outputFile пуст но не явно передан, обновляем расширение на основе формата
+		baseName := filepath.Base(finalOutputFile)
+		basePath := filepath.Dir(finalOutputFile)
+
+		// Удаляем старое расширение
+		name := strings.TrimSuffix(baseName, filepath.Ext(baseName))
+
+		// Добавляем правильное расширение
+		ext := ".md"
+		if *format == "html" {
+			ext = ".html"
+		}
+		finalOutputFile = filepath.Join(basePath, name+ext)
 	}
 
 	fmt.Printf("🔍 Analyzing %s code in: %s\n", *language, *sourceDir)

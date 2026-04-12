@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Documentation</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        nav {
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem;
+            flex-wrap: wrap;
+        }
+
+        nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+
+        nav a:hover {
+            color: #764ba2;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        section {
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        h2 {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 2px solid #667eea;
+            color: #333;
+        }
+
+        h3 {
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #555;
+        }
+
+        h4 {
+            font-size: 1.2rem;
+            margin-top: 1.5rem;
+            margin-bottom: 0.8rem;
+            color: #666;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+        .package {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            border-radius: 4px;
+        }
+
+        .package-name {
+            font-size: 1.3rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+            font-family: 'Courier New', monospace;
+        }
+
+        .package-description {
+            color: #666;
+            margin-bottom: 1rem;
+        }
+
+        .imports {
+            margin-bottom: 1.5rem;
+        }
+
+        .imports-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #555;
+        }
+
+        .import-list {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .import-item {
+            color: #666;
+            margin: 0.3rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+
+        .elements {
+            margin-top: 1.5rem;
+        }
+
+        .element-type {
+            font-weight: bold;
+            color: #667eea;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .element-list {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .element-item {
+            margin: 0.8rem 0;
+            padding: 0.8rem;
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+        }
+
+        .element-name {
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .element-type-badge {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            padding: 0.2rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.85rem;
+            margin-left: 0.5rem;
+        }
+
+        .element-signature {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 0.8rem;
+            margin: 0.5rem 0;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+        }
+
+        .element-doc {
+            color: #666;
+            margin-top: 0.5rem;
+            font-size: 0.95rem;
+        }
+
+        .layers {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 1.5rem;
+        }
+
+        .layer {
+            margin-bottom: 1.5rem;
+            padding: 1rem;
+            background: #f8f9fa;
+            border-left: 3px solid #667eea;
+            border-radius: 4px;
+        }
+
+        .layer-title {
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .layer-packages {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .layer-package {
+            color: #666;
+            margin: 0.3rem 0;
+            font-family: 'Courier New', monospace;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+
+        .warning-title {
+            font-weight: bold;
+            color: #856404;
+            margin-bottom: 0.5rem;
+        }
+
+        .warning-list {
+            list-style: none;
+            padding-left: 1rem;
+        }
+
+        .warning-item {
+            color: #856404;
+            margin: 0.5rem 0;
+        }
+
+        .complexity-indicator {
+            display: inline-block;
+            padding: 0.3rem 0.8rem;
+            background: #f8d7da;
+            color: #721c24;
+            border-radius: 3px;
+            font-size: 0.85rem;
+        }
+
+        .dependency-graph {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            padding: 1.5rem;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+
+        .dependency-line {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            color: #666;
+            margin: 0.3rem 0;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin: 1rem 0;
+        }
+
+        .stat-card {
+            background: white;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        footer {
+            background: #f8f9fa;
+            border-top: 1px solid #e9ecef;
+            padding: 2rem;
+            text-align: center;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                box-shadow: none;
+            }
+
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            h2 {
+                font-size: 1.5rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+  <div class="container">
+    <nav>
+      <ul>
+        <li><a href="#overview">Overview</a></li>
+        <li><a href="#packages">Packages</a></li>
+        <li><a href="#architecture">Architecture</a></li>
+        <li><a href="#statistics">Statistics</a></li>
+      </ul>
+    </nav>
+    <main class="content">
+      <section id="overview">
+        <h1>API Documentation</h1>
+        <p class="subtitle">Automatically generated from source code</p>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Total Packages</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">27</div>
+          <div class="stat-label">Total Elements</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">0</div>
+          <div class="stat-label">Circular Dependencies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">1</div>
+          <div class="stat-label">Complex Packages</div>
+        </div>
+      </div>
+      </section>
+
+      <section id="packages">
+        <h2>Packages</h2>
+      <div class="package">
+        <div class="package-name">api</div>
+        <p class="package-description">Package api provides HTTP API layer</p>
+        <div class="imports">
+          <div class="imports-title">Imports:</div>
+          <ul class="import-list">
+            <li class="import-item">awdoc/examples/complex/service</li>
+            <li class="import-item">fmt</li>
+          </ul>
+        </div>
+        <h4>Exported Elements</h4>
+        <div class="elements">
+          <div class="element-type">Functions</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">NewUserHandler</span>
+              <span class="element-type-badge">function</span>
+              <div class="element-signature">func NewUserHandler(svc *service.UserService) *UserHandler</div>
+              <div class="element-doc">NewUserHandler creates a new handler</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Methods</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">HandleGetUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserHandler) HandleGetUser(id int) (string, error)</div>
+              <div class="element-doc">HandleGetUser handles GET /users/:id request</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">HandleCreateUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserHandler) HandleCreateUser(name string) error</div>
+              <div class="element-doc">HandleCreateUser handles POST /users request</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">HandleListUsers</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserHandler) HandleListUsers() ([]string, error)</div>
+              <div class="element-doc">HandleListUsers handles GET /users request</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">HandleDeleteUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserHandler) HandleDeleteUser(id int) error</div>
+              <div class="element-doc">HandleDeleteUser handles DELETE /users/:id request</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Structs</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">UserHandler</span>
+              <span class="element-type-badge">struct</span>
+              <div class="element-doc">UserHandler handles HTTP requests for users</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="package">
+        <div class="package-name">database</div>
+        <p class="package-description">Package database provides database access layer</p>
+        <h4>Exported Elements</h4>
+        <div class="elements">
+          <div class="element-type">Functions</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">NewPostgreSQL</span>
+              <span class="element-type-badge">function</span>
+              <div class="element-signature">func NewPostgreSQL() *PostgreSQL</div>
+              <div class="element-doc">NewPostgreSQL creates a new PostgreSQL instance</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Methods</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">Connect</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*PostgreSQL) Connect(url string) error</div>
+              <div class="element-doc">Connect establishes connection to PostgreSQL</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">Query</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*PostgreSQL) Query(sql string) ([]map[string]interface{}, error)</div>
+              <div class="element-doc">Query executes a SELECT query</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">Exec</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*PostgreSQL) Exec(sql string, args unknown) error</div>
+              <div class="element-doc">Exec executes an INSERT/UPDATE/DELETE query</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">Close</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*PostgreSQL) Close() error</div>
+              <div class="element-doc">Close closes the database connection</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Structs</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">PostgreSQL</span>
+              <span class="element-type-badge">struct</span>
+              <div class="element-doc">PostgreSQL implements Database interface for PostgreSQL</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Interfaces</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">Database</span>
+              <span class="element-type-badge">interface</span>
+              <div class="element-doc">Database interface defines core database operations</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="package">
+        <div class="package-name">repository</div>
+        <p class="package-description">Package repository provides data access layer</p>
+        <div class="imports">
+          <div class="imports-title">Imports:</div>
+          <ul class="import-list">
+            <li class="import-item">awdoc/examples/complex/database</li>
+          </ul>
+        </div>
+        <h4>Exported Elements</h4>
+        <div class="elements">
+          <div class="element-type">Functions</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">NewUserRepository</span>
+              <span class="element-type-badge">function</span>
+              <div class="element-signature">func NewUserRepository(db database.Database) *UserRepository</div>
+              <div class="element-doc">NewUserRepository creates a new repository</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Methods</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">GetByID</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserRepository) GetByID(id int) (*User, error)</div>
+              <div class="element-doc">GetByID fetches a user by ID</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">Save</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserRepository) Save(user *User) error</div>
+              <div class="element-doc">Save saves a user to database</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">Delete</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserRepository) Delete(id int) error</div>
+              <div class="element-doc">Delete deletes a user from database</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">GetAll</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserRepository) GetAll() ([]*User, error)</div>
+              <div class="element-doc">GetAll retrieves all users</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Structs</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">UserRepository</span>
+              <span class="element-type-badge">struct</span>
+              <div class="element-doc">UserRepository handles user database operations</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">User</span>
+              <span class="element-type-badge">struct</span>
+              <div class="element-doc">User represents a user entity</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <div class="package">
+        <div class="package-name">service</div>
+        <p class="package-description">Package service provides business logic layer</p>
+        <div class="imports">
+          <div class="imports-title">Imports:</div>
+          <ul class="import-list">
+            <li class="import-item">awdoc/examples/complex/repository</li>
+          </ul>
+        </div>
+        <h4>Exported Elements</h4>
+        <div class="elements">
+          <div class="element-type">Functions</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">NewUserService</span>
+              <span class="element-type-badge">function</span>
+              <div class="element-signature">func NewUserService(repo *repository.UserRepository) *UserService</div>
+              <div class="element-doc">NewUserService creates a new service</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Methods</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">RegisterUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserService) RegisterUser(name string) error</div>
+              <div class="element-doc">RegisterUser registers a new user</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">GetUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserService) GetUser(id int) (*repository.User, error)</div>
+              <div class="element-doc">GetUser fetches user information</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">UpdateUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserService) UpdateUser(id int, name string) error</div>
+              <div class="element-doc">UpdateUser updates user information</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">DeleteUser</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserService) DeleteUser(id int) error</div>
+              <div class="element-doc">DeleteUser removes a user</div>
+            </li>
+            <li class="element-item">
+              <span class="element-name">ListUsers</span>
+              <span class="element-type-badge">method</span>
+              <div class="element-signature">func (*UserService) ListUsers() ([]*repository.User, error)</div>
+              <div class="element-doc">ListUsers returns all users</div>
+            </li>
+          </ul>
+        </div>
+        <div class="elements">
+          <div class="element-type">Structs</div>
+          <ul class="element-list">
+            <li class="element-item">
+              <span class="element-name">UserService</span>
+              <span class="element-type-badge">struct</span>
+              <div class="element-doc">UserService provides user business logic</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture Analysis</h2>
+      <h3>Architectural Layers</h3>
+      <div class="layers">
+        <div class="layer">
+          <div class="layer-title">Layer 0</div>
+          <ul class="layer-packages">
+            <li class="layer-package">database</li>
+            <li class="layer-package">repository</li>
+            <li class="layer-package">service</li>
+            <li class="layer-package">api</li>
+          </ul>
+        </div>
+      </div>
+      <h3>Complex Packages (God Objects)</h3>
+      <p>Packages with high complexity that might need refactoring:</p>
+      <div class="warning-box" style="background: #f8f3cd; border-color: #ffc107;">
+        <ul class="warning-list">
+          <li class="warning-item" style="color: #856404;">
+            <strong>service</strong>
+            <span class="complexity-indicator">Complexity: 7 | Dependencies: 0</span>
+          </li>
+        </ul>
+      </div>
+      <h3>Dependency Graph</h3>
+      <div class="dependency-graph">
+      </div>
+      </section>
+
+      <section id="statistics">
+        <h2>Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">1</div>
+          <div class="stat-label">Interfaces</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">1</div>
+          <div class="stat-label">Layers</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">4</div>
+          <div class="stat-label">Functions</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">17</div>
+          <div class="stat-label">Methods</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">0</div>
+          <div class="stat-label">Types</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">5</div>
+          <div class="stat-label">Structs</div>
+        </div>
+      </div>
+      </section>
+    </main>
+    <footer>
+      <p>Generated by AWDoc - Automated Web Documentation Generator</p>
+      <p>This documentation was automatically generated from source code analysis.</p>
+    </footer>
+  </div>
+</body>
+</html>

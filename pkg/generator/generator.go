@@ -30,8 +30,8 @@ func (db *DocumentationBuilder) BuildMarkdown() string {
 	return gen.GenerateProjectDoc()
 }
 
-// BuildHTML строит документацию в HTML (позже)
+// BuildHTML строит документацию в HTML
 func (db *DocumentationBuilder) BuildHTML() string {
-	// TODO: реализовать генератор HTML с диаграммами
-	return "<html><!-- TODO: Implement HTML generation --></html>"
+	gen := NewHTMLGenerator(db.sourceInfo, db.graph)
+	return gen.GenerateProjectDoc()
 }
