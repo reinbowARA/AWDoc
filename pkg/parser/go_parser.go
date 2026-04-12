@@ -108,15 +108,24 @@ func (gp *GoParser) extractGenDecl(decl *ast.GenDecl, filePath string, fset *tok
 	case token.TYPE:
 		for _, spec := range decl.Specs {
 			if typeSpec, ok := spec.(*ast.TypeSpec); ok {
+				typeKind := gp.getTypeKind(typeSpec.Type)
 				elem := &CodeElement{
 					Name:       typeSpec.Name.Name,
-					Type:       gp.getTypeKind(typeSpec.Type),
+					Type:       typeKind,
 					Exported:   ast.IsExported(typeSpec.Name.Name),
 					Doc:        formatDoc(decl.Doc),
 					SourceFile: filePath,
 					StartLine:  fset.Position(typeSpec.Pos()).Line,
 					EndLine:    fset.Position(typeSpec.End()).Line,
 				}
+
+				// Extract fields for struct types
+				if typeKind == ElementStruct {
+					if structType, ok := typeSpec.Type.(*ast.StructType); ok {
+						elem.Fields = gp.extractStructFields(structType)
+					}
+				}
+
 				elements = append(elements, *elem)
 			}
 		}
@@ -175,6 +184,33 @@ func (gp *GoParser) extractParameters(fl *ast.FieldList) []Parameter {
 	}
 
 	return params
+}
+
+// extractStructFields извлекает поля из struct type
+func (gp *GoParser) extractStructFields(st *ast.StructType) []StructField {
+	var fields []StructField
+	if st == nil || st.Fields == nil {
+		return fields
+	}
+
+	for _, field := range st.Fields.List {
+		// Пропускаем embedded fields (без имен) в базовом выводе
+		if len(field.Names) == 0 {
+			continue
+		}
+
+		typeName := gp.typeToString(field.Type)
+		for _, name := range field.Names {
+			fields = append(fields, StructField{
+				Name:     name.Name,
+				Type:     typeName,
+				Doc:      formatDoc(field.Doc),
+				Exported: ast.IsExported(name.Name),
+			})
+		}
+	}
+
+	return fields
 }
 
 // typeToString преобразует AST тип в строку
@@ -288,4 +324,70 @@ func (gp *GoParser) ExtractCallReferences(filePath string) ([]string, error) {
 	})
 
 	return callRefs, nil
+}
+
+// AnalyzeTestCoverage анализирует наличие тестов для элементов в пакете
+func (gp *GoParser) AnalyzeTestCoverage(pkg *Package, testFunctions map[string]bool) {
+	// testFunctions - это map из имён тестов (например: "TestFunction", "TestMethod", "TestGodObjects")
+
+	testedCount := 0
+	testableElementsCount := 0
+
+	// Проходим по экспортируемым элементам
+	for i, elem := range pkg.ExportedAPI {
+		// Пропускаем структуры, интерфейсы и типы - они не требуют тестов
+		if elem.Type == ElementStruct || elem.Type == ElementInterface || elem.Type == ElementType_ {
+			continue
+		}
+
+		testableElementsCount++
+		testName := gp.getExpectedTestName(elem.Name, elem.Type)
+
+		// Проверяем есть ли соответствующий тест
+		hasTest := false
+		for testFunc := range testFunctions {
+			if strings.EqualFold(testFunc, testName) ||
+				strings.HasPrefix(strings.ToLower(testFunc), strings.ToLower("Test"+elem.Name)) {
+				hasTest = true
+				pkg.ExportedAPI[i].HasTests = true
+				pkg.ExportedAPI[i].TestName = testFunc
+				testedCount++
+				break
+			}
+		}
+
+		// Обновляем в Elements также
+		for j, e := range pkg.Elements {
+			if e.Name == elem.Name && e.Type == elem.Type {
+				pkg.Elements[j].HasTests = hasTest
+				if hasTest {
+					pkg.Elements[j].TestName = pkg.ExportedAPI[i].TestName
+				}
+				break
+			}
+		}
+	}
+
+	// Вычисляем процент покрытия только для функций и методов
+	pkg.TotalElements = testableElementsCount
+	pkg.TestedElements = testedCount
+
+	if pkg.TotalElements > 0 {
+		pkg.Coverage = float64(testedCount) / float64(pkg.TotalElements) * 100
+	} else {
+		pkg.Coverage = 0
+	}
+}
+
+// getExpectedTestName генерирует ожидаемое имя функции теста
+func (gp *GoParser) getExpectedTestName(elementName string, elemType ElementType) string {
+	switch elemType {
+	case ElementFunc:
+		return "Test" + elementName
+	case ElementMethod:
+		// для методов ищем Test<ReceiverType><MethodName>
+		return "Test" + elementName
+	default:
+		return "Test" + elementName
+	}
 }

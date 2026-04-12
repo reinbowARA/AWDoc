@@ -2,6 +2,9 @@ package parser
 
 import (
 	"fmt"
+	"go/ast"
+	"go/parser"
+	"go/token"
 	"os"
 	"path/filepath"
 	"strings"
@@ -102,6 +105,11 @@ func ParseProject(rootDir string, language string) (*SourceInfo, error) {
 		}
 	}
 
+	// Анализируем тесты
+	if language == "go" {
+		analyzeGoTestCoverage(rootDir, sourceInfo)
+	}
+
 	return sourceInfo, nil
 }
 
@@ -121,4 +129,83 @@ func GetLines(filePath string) ([]string, error) {
 		return nil, err
 	}
 	return strings.Split(content, "\n"), nil
+}
+
+// analyzeGoTestCoverage анализирует наличие тестов для Go пакетов
+func analyzeGoTestCoverage(rootDir string, sourceInfo *SourceInfo) {
+	// Создаём map для хранения найденных функций тестов по пакетам
+	testFuncsByPackage := make(map[string]map[string]bool)
+
+	// Сканируем все _test.go файлы
+	err := filepath.Walk(rootDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if info.IsDir() {
+			if info.Name() == ".git" || info.Name() == "vendor" || info.Name() == "node_modules" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+
+		// Обрабатываем только _test.go файлы
+		if strings.HasSuffix(path, "_test.go") {
+			// Парсим тестовый файл и извлекаем функции тестов
+			testFuncs := extractTestFunctions(path)
+
+			// Определяем пакет этого тестового файла
+			// пакет будет в той же директории что и файл
+			dir := filepath.Dir(path)
+			pkgPath := filepath.Base(dir)
+
+			if testFuncsByPackage[pkgPath] == nil {
+				testFuncsByPackage[pkgPath] = make(map[string]bool)
+			}
+
+			for _, testFunc := range testFuncs {
+				testFuncsByPackage[pkgPath][testFunc] = true
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		fmt.Printf("Warning: failed to scan test files: %v\n", err)
+		return
+	}
+
+	// Теперь анализируем каждый пакет
+	goParser := &GoParser{}
+	for pkgName, pkg := range sourceInfo.Packages {
+		testFuncs := testFuncsByPackage[pkgName]
+		if testFuncs == nil {
+			testFuncs = make(map[string]bool)
+		}
+
+		// Анализируем покрытие для этого пакета
+		goParser.AnalyzeTestCoverage(pkg, testFuncs)
+	}
+}
+
+// extractTestFunctions извлекает имена функций тестов из файла
+func extractTestFunctions(filePath string) []string {
+	fset := token.NewFileSet()
+	file, err := parser.ParseFile(fset, filePath, nil, parser.ParseComments)
+	if err != nil {
+		return []string{}
+	}
+
+	var testFuncs []string
+	for _, decl := range file.Decls {
+		if fn, ok := decl.(*ast.FuncDecl); ok {
+			// Функция теста начинается с "Test"
+			if strings.HasPrefix(fn.Name.Name, "Test") {
+				testFuncs = append(testFuncs, fn.Name.Name)
+			}
+		}
+	}
+
+	return testFuncs
 }

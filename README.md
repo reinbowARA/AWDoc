@@ -204,17 +204,30 @@ The analyzer combines multiple factors to identify god objects:
 
 ## Future Enhancements
 
+### High Priority
+
+- [x] Basic HTML output with responsive design ✅
+- [x] **Interactive Diagrams with Mermaid.js** ✅
+- [x] **Coverage Information in Documentation** ✅
 - [ ] Support for multiple languages (Python, Rust, C++, etc.)
-- [x] Basic HTML output with responsive design
-- [ ] Interactive HTML output with diagrams (Mermaid/GraphViz)
-- [ ] Web interface for browsing documentation
-- [ ] Integration with common CI/CD systems
-- [ ] Custom templates for documentation generation
+
+### Medium Priority
+
 - [ ] Export to multiple formats (JSON, XML, etc.)
-- [ ] Test coverage integration
+- [ ] VS Code extension
+- [ ] Custom templates for documentation generation
 - [ ] Performance metrics and profiling info
+
+### Low Priority
+
+- [ ] Dynamic web server with search and filtering capabilities
+- [ ] IDE plugins (IntelliJ, VS)
+- [ ] REST API
+- [ ] Plugin system
+- [ ] Version comparison
 - [ ] Dark mode for HTML documentation
 - [ ] Search functionality in HTML output
+- [ ] Integration with common CI/CD systems
 
 ## Contributing
 

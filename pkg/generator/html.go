@@ -218,10 +218,16 @@ func (hg *HTMLGenerator) generateHTMLHead() string {
         }
 
         .import-item {
-            color: #666;
+            color: #667eea;
             margin: 0.3rem 0;
             font-family: 'Courier New', monospace;
             font-size: 0.9rem;
+            font-weight: 600;
+            display: inline-block;
+            background: #f0f4f8;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            margin: 0.2rem 0.4rem 0.2rem 0;
         }
 
         .elements {
@@ -405,6 +411,141 @@ func (hg *HTMLGenerator) generateHTMLHead() string {
             font-size: 0.9em;
         }
 
+        .coverage-badge {
+            display: inline-block;
+            padding: 0.25rem 0.6rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin: 0.2rem 0;
+        }
+
+        .coverage-high {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .coverage-medium {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .coverage-low {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .coverage-none {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+
+        .no-test-warning {
+            display: inline-block;
+            background: #f8d7da;
+            color: #721c24;
+            padding: 0.2rem 0.5rem;
+            border-radius: 3px;
+            font-size: 0.8rem;
+            margin-left: 0.5rem;
+            font-weight: bold;
+        }
+
+        .coverage-bar {
+            width: 100%;
+            height: 6px;
+            background: #e9ecef;
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 0.5rem 0;
+        }
+
+        .coverage-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.3s ease;
+        }
+
+        .collapsible-header {
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            user-select: none;
+            padding: 0.5rem;
+            border-radius: 3px;
+            transition: background 0.2s ease;
+        }
+
+        .collapsible-header:hover {
+            background: #f0f0f0;
+        }
+
+        .collapsible-header.active {
+            background: #e8e8e8;
+        }
+
+        .toggle-icon {
+            display: inline-block;
+            margin-right: 0.5rem;
+            width: 1.2em;
+            height: 1.2em;
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-icon.collapsed {
+            transform: rotate(90deg);
+        }
+
+        .collapsible-content {
+            display: none;
+            padding: 0.8rem;
+            background: #fafafa;
+            border-left: 2px solid #ddd;
+            margin-left: 1rem;
+            margin-top: 0.5rem;
+            border-radius: 3px;
+        }
+
+        .collapsible-content.show {
+            display: block;
+        }
+
+        .struct-field {
+            padding: 0.4rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.95rem;
+        }
+
+        .struct-field-name {
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        .struct-field-type {
+            color: #666;
+            margin-left: 0.5rem;
+        }
+
+        .struct-fields {
+            padding: 0.5rem 0;
+            border-left: 3px solid #667eea;
+            padding-left: 1rem;
+            margin: 0.5rem 0;
+        }
+
+        .struct-field-private .struct-field-name {
+            color: #999;
+            font-style: italic;
+        }
+
+        .struct-field-doc {
+            font-size: 0.85rem;
+            color: #555;
+            margin-left: 1.5rem;
+            margin-top: 0.2rem;
+            font-style: italic;
+        }
+
         @media (max-width: 768px) {
             .container {
                 box-shadow: none;
@@ -431,6 +572,34 @@ func (hg *HTMLGenerator) generateHTMLHead() string {
             }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ 
+            startOnLoad: true,
+            theme: 'default',
+            securityLevel: 'loose',
+            flowchart: { useMaxWidth: true }
+        });
+
+        // Toggle collapsible sections
+        document.addEventListener('DOMContentLoaded', function() {
+            const headers = document.querySelectorAll('.collapsible-header');
+            headers.forEach(header => {
+                header.addEventListener('click', function(e) {
+                    if (e.target.closest('a')) return; // Don't toggle if clicking a link
+                    
+                    const content = this.nextElementSibling;
+                    if (content && content.classList.contains('collapsible-content')) {
+                        content.classList.toggle('show');
+                        const icon = this.querySelector('.toggle-icon');
+                        if (icon) {
+                            icon.classList.toggle('collapsed');
+                        }
+                    }
+                });
+            });
+        });
+    </script>
 </head>
 `
 }
@@ -462,6 +631,13 @@ func (hg *HTMLGenerator) generateProjectOverview() string {
 	html.WriteString("        <div class=\"stat-card\">\n")
 	html.WriteString(fmt.Sprintf("          <div class=\"stat-number\">%d</div>\n", elementCount))
 	html.WriteString("          <div class=\"stat-label\">Total Elements</div>\n")
+	html.WriteString("        </div>\n")
+
+	// Среднее покрытие
+	avgCoverage := hg.calculateAverageCoverage()
+	html.WriteString("        <div class=\"stat-card\">\n")
+	html.WriteString(fmt.Sprintf("          <div class=\"stat-number\">%d%%</div>\n", int(avgCoverage)))
+	html.WriteString("          <div class=\"stat-label\">Avg Test Coverage</div>\n")
 	html.WriteString("        </div>\n")
 
 	html.WriteString("        <div class=\"stat-card\">\n")
@@ -503,10 +679,38 @@ func (hg *HTMLGenerator) generatePackageHTML(pkg *parser.Package) string {
 	var html strings.Builder
 
 	html.WriteString("      <div class=\"package\">\n")
-	html.WriteString(fmt.Sprintf("        <div class=\"package-name\">%s</div>\n", escapeHTML(pkg.Name)))
 
+	// Collapsible header for package info
+	html.WriteString("        <div class=\"collapsible-header\">\n")
+	html.WriteString("          <span class=\"toggle-icon collapsed\">▶</span>\n")
+	html.WriteString(fmt.Sprintf("          <span class=\"package-name\">%s</span>\n", escapeHTML(pkg.Name)))
+	html.WriteString("        </div>\n")
+	html.WriteString("        <div class=\"collapsible-content\">\n")
+
+	// описание пакета
 	if pkg.Doc != "" {
 		html.WriteString(fmt.Sprintf("        <p class=\"package-description\">%s</p>\n", escapeHTML(pkg.Doc)))
+	}
+
+	// информация о покрытии тестами
+	if pkg.TotalElements > 0 {
+		coveragePercent := int(pkg.Coverage)
+		coverageClass := "coverage-none"
+		if pkg.Coverage >= 80 {
+			coverageClass = "coverage-high"
+		} else if pkg.Coverage >= 50 {
+			coverageClass = "coverage-medium"
+		} else if pkg.Coverage > 0 {
+			coverageClass = "coverage-low"
+		}
+
+		html.WriteString("        <div style=\"margin: 1rem 0;\">\n")
+		html.WriteString(fmt.Sprintf("          <span class=\"coverage-badge %s\">📊 Coverage: %d%% (%d/%d)</span>\n",
+			coverageClass, coveragePercent, pkg.TestedElements, pkg.TotalElements))
+		html.WriteString(fmt.Sprintf("          <div class=\"coverage-bar\">\n"))
+		html.WriteString(fmt.Sprintf("            <div class=\"coverage-fill\" style=\"width: %.1f%%;\"></div>\n", pkg.Coverage))
+		html.WriteString(fmt.Sprintf("          </div>\n"))
+		html.WriteString("        </div>\n")
 	}
 
 	// импорты
@@ -545,6 +749,7 @@ func (hg *HTMLGenerator) generatePackageHTML(pkg *parser.Package) string {
 		html.WriteString(hg.generateElementsHTML(internalElems))
 	}
 
+	html.WriteString("        </div>\n")
 	html.WriteString("      </div>\n")
 
 	return html.String()
@@ -583,15 +788,56 @@ func (hg *HTMLGenerator) generateElementsHTML(elements []parser.CodeElement) str
 
 		for _, elem := range items {
 			html.WriteString("            <li class=\"element-item\">\n")
-			html.WriteString(fmt.Sprintf("              <span class=\"element-name\">%s</span>\n", escapeHTML(elem.Name)))
-			html.WriteString(fmt.Sprintf("              <span class=\"element-type-badge\">%s</span>\n", elemType))
 
-			if elem.Signature != "" {
-				html.WriteString(fmt.Sprintf("              <div class=\"element-signature\">%s</div>\n", escapeHTML(elem.Signature)))
-			}
+			// Special handling for structs - use collapsible header
+			if elem.Type == parser.ElementStruct && len(elem.Fields) > 0 {
+				html.WriteString("              <div class=\"collapsible-header\">\n")
+				html.WriteString("                <span class=\"toggle-icon collapsed\">▶</span>\n")
+				html.WriteString(fmt.Sprintf("                <span class=\"element-name\">%s</span>\n", escapeHTML(elem.Name)))
+				html.WriteString(fmt.Sprintf("                <span class=\"element-type-badge\">%s</span>\n", elemType))
+				html.WriteString("              </div>\n")
+				html.WriteString("              <div class=\"collapsible-content\">\n")
 
-			if elem.Doc != "" {
-				html.WriteString(fmt.Sprintf("              <div class=\"element-doc\">%s</div>\n", escapeHTML(elem.Doc)))
+				if elem.Doc != "" {
+					html.WriteString(fmt.Sprintf("                <div class=\"element-doc\">%s</div>\n", escapeHTML(elem.Doc)))
+				}
+
+				html.WriteString("                <div class=\"struct-fields\">\n")
+				for _, field := range elem.Fields {
+					fieldName := escapeHTML(field.Name)
+					fieldType := escapeHTML(field.Type)
+					if !field.Exported {
+						html.WriteString(fmt.Sprintf("                  <div class=\"struct-field struct-field-private\">\n"))
+					} else {
+						html.WriteString(fmt.Sprintf("                  <div class=\"struct-field\">\n"))
+					}
+					html.WriteString(fmt.Sprintf("                    <span class=\"struct-field-name\">%s</span> <span class=\"struct-field-type\">%s</span>\n", fieldName, fieldType))
+					if field.Doc != "" {
+						html.WriteString(fmt.Sprintf("                    <div class=\"struct-field-doc\">%s</div>\n", escapeHTML(field.Doc)))
+					}
+					html.WriteString("                  </div>\n")
+				}
+				html.WriteString("                </div>\n")
+				html.WriteString("              </div>\n")
+			} else {
+				// Regular elements
+				html.WriteString(fmt.Sprintf("              <span class=\"element-name\">%s</span>\n", escapeHTML(elem.Name)))
+				html.WriteString(fmt.Sprintf("              <span class=\"element-type-badge\">%s</span>\n", elemType))
+
+				// Значок для методов без тестов
+				if !elem.HasTests {
+					html.WriteString("              <span class=\"no-test-warning\">⚠️ NO TEST</span>\n")
+				} else if elem.HasTests && elem.TestName != "" {
+					html.WriteString(fmt.Sprintf("              <span class=\"coverage-badge coverage-high\">✅ %s</span>\n", escapeHTML(elem.TestName)))
+				}
+
+				if elem.Signature != "" {
+					html.WriteString(fmt.Sprintf("              <div class=\"element-signature\">%s</div>\n", escapeHTML(elem.Signature)))
+				}
+
+				if elem.Doc != "" {
+					html.WriteString(fmt.Sprintf("              <div class=\"element-doc\">%s</div>\n", escapeHTML(elem.Doc)))
+				}
 			}
 
 			html.WriteString("            </li>\n")
@@ -611,6 +857,7 @@ func (hg *HTMLGenerator) generateArchitectureSection() string {
 	// слои архитектуры
 	if len(hg.graph.Layers) > 0 {
 		html.WriteString("      <h3>Architectural Layers</h3>\n")
+		html.WriteString(hg.generateLayersDiagram())
 		html.WriteString("      <div class=\"layers\">\n")
 		for i, layer := range hg.graph.Layers {
 			html.WriteString("        <div class=\"layer\">\n")
@@ -659,6 +906,7 @@ func (hg *HTMLGenerator) generateArchitectureSection() string {
 
 	// граф зависимостей
 	html.WriteString("      <h3>Dependency Graph</h3>\n")
+	html.WriteString(hg.generateDependencyDiagram())
 	html.WriteString("      <div class=\"dependency-graph\">\n")
 	for pkg, deps := range hg.graph.Edges {
 		if len(deps) > 0 {
@@ -742,4 +990,129 @@ func (hg *HTMLGenerator) countElements() int {
 		count += len(pkg.Elements)
 	}
 	return count
+}
+
+// calculateAverageCoverage вычисляет среднее покрытие по всем пакетам
+func (hg *HTMLGenerator) calculateAverageCoverage() float64 {
+	if len(hg.sourceInfo.Packages) == 0 {
+		return 0
+	}
+
+	totalCoverage := 0.0
+	validPackages := 0
+
+	for _, pkg := range hg.sourceInfo.Packages {
+		if pkg.TotalElements > 0 {
+			totalCoverage += pkg.Coverage
+			validPackages++
+		}
+	}
+
+	if validPackages == 0 {
+		return 0
+	}
+
+	return totalCoverage / float64(validPackages)
+}
+
+// generateDependencyDiagram генерирует диаграмму зависимостей Mermaid
+func (hg *HTMLGenerator) generateDependencyDiagram() string {
+	if len(hg.graph.Edges) == 0 {
+		return "<p>No dependencies found</p>\n"
+	}
+
+	var diagram strings.Builder
+	diagram.WriteString("      <div class=\"mermaid\">\n")
+	diagram.WriteString("        graph LR\n")
+
+	// Определяем цвет для каждого пакета на основе сложности
+	nodes := hg.graph.Nodes
+	for pkg := range hg.graph.Edges {
+		var color string
+		if node, exists := nodes[pkg]; exists {
+			if node.Complexity > 20 {
+				color = "#ff6b6b"
+			} else if node.Complexity > 10 {
+				color = "#ffd700"
+			} else {
+				color = "#90ee90"
+			}
+		} else {
+			color = "#90ee90"
+		}
+
+		pkgLabel := pkg
+		if node, exists := nodes[pkg]; exists {
+			pkgLabel = fmt.Sprintf("%s<br/>(%d)", pkg, len(node.Dependencies))
+		}
+
+		diagram.WriteString(fmt.Sprintf("        %s[\"%s\"]:::node%d\n",
+			strings.ReplaceAll(pkg, "/", "_"), pkgLabel, hashColor(color)))
+	}
+
+	// Добавляем связи
+	for pkg, deps := range hg.graph.Edges {
+		for _, dep := range deps {
+			diagram.WriteString(fmt.Sprintf("        %s --> %s\n",
+				strings.ReplaceAll(pkg, "/", "_"),
+				strings.ReplaceAll(dep, "/", "_")))
+		}
+	}
+
+	// Добавляем стили
+	diagram.WriteString("        classDef node1 fill:#90ee90,stroke:#333,stroke-width:2px,color:#000\n")
+	diagram.WriteString("        classDef node2 fill:#ffd700,stroke:#333,stroke-width:2px,color:#000\n")
+	diagram.WriteString("        classDef node3 fill:#ff6b6b,stroke:#333,stroke-width:2px,color:#fff\n")
+
+	diagram.WriteString("      </div>\n")
+	return diagram.String()
+}
+
+// generateLayers Diagram генерирует диаграмму архитектурных слоев
+func (hg *HTMLGenerator) generateLayersDiagram() string {
+	if len(hg.graph.Layers) == 0 {
+		return "<p>No architectural layers found</p>\n"
+	}
+
+	var diagram strings.Builder
+	diagram.WriteString("      <div class=\"mermaid\">\n")
+	diagram.WriteString("        graph TD\n")
+
+	colors := []string{"#90ee90", "#87ceeb", "#ffd700", "#ff6b6b", "#dda0dd"}
+
+	for i, layer := range hg.graph.Layers {
+		layerName := fmt.Sprintf("Layer%d", i)
+		layerLabel := fmt.Sprintf("Layer %d", i)
+
+		diagram.WriteString(fmt.Sprintf("        %s[\"%s", layerName, layerLabel))
+
+		for _, pkg := range layer {
+			diagram.WriteString(fmt.Sprintf("<br/>%s", pkg))
+		}
+
+		diagram.WriteString("\"]\n")
+
+		// Добавляем стиль для слоя
+		colorIdx := i % len(colors)
+		diagram.WriteString(fmt.Sprintf("        style %s fill:%s,stroke:#333,stroke-width:2px,color:#000\n",
+			layerName, colors[colorIdx]))
+	}
+
+	// Добавляем связи между слоями
+	for i := 0; i < len(hg.graph.Layers)-1; i++ {
+		diagram.WriteString(fmt.Sprintf("        Layer%d --> Layer%d\n", i, i+1))
+	}
+
+	diagram.WriteString("      </div>\n")
+	return diagram.String()
+}
+
+// hashColor возвращает индекс стиля на основе цвета
+func hashColor(color string) int {
+	if strings.Contains(color, "90ee90") {
+		return 1
+	} else if strings.Contains(color, "ffd700") {
+		return 2
+	}
+	return 3
 }

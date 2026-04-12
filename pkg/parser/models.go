@@ -16,12 +16,25 @@ type CodeElement struct {
 	EndLine     int         // конечная строка
 	Package     string      // пакет
 	RelatedDocs []string    // примеры использования
+	// Coverage и тестирование
+	HasTests bool   // есть ли тест для этого элемента
+	TestName string // имя функции теста (например: "TestFunctionName")
+	// Для структур и интерфейсов
+	Fields []StructField // поля структуры или методы интерфейса
 }
 
 // Parameter представляет параметр функции
 type Parameter struct {
 	Name string // имя параметра
 	Type string // тип параметра
+}
+
+// StructField представляет поле структуры или метод интерфейса
+type StructField struct {
+	Name     string // имя поля
+	Type     string // тип поля
+	Doc      string // документация поля
+	Exported bool   // экспортируется ли
 }
 
 // ElementType - тип элемента кода
@@ -45,6 +58,11 @@ type Package struct {
 	Elements    []CodeElement   // элементы в пакете
 	Imports     map[string]bool // импорты {путь -> bool}
 	ExportedAPI []CodeElement   // только экспортируемые элементы
+	// Coverage информация
+	Coverage       float64  // процент покрытия пакета (0-100)
+	TestedElements int      // количество протестированных элементов
+	TotalElements  int      // общее количество экспортируемых элементов
+	TestFiles      []string // список test файлов в пакете
 }
 
 // Symbol представляет символ для удобства анализа

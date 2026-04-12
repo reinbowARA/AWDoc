@@ -72,6 +72,33 @@ func (mg *MarkdownGenerator) generatePackageDoc(pkg *parser.Package) string {
 		doc.WriteString(fmt.Sprintf("**Description:** %s\n\n", pkg.Doc))
 	}
 
+	// coverage информация
+	if pkg.TotalElements > 0 {
+		coveragePercent := int(pkg.Coverage)
+		coverageClass := "coverage-none"
+		if pkg.Coverage >= 80 {
+			coverageClass = "coverage-high"
+		} else if pkg.Coverage >= 50 {
+			coverageClass = "coverage-medium"
+		} else if pkg.Coverage > 0 {
+			coverageClass = "coverage-low"
+		}
+
+		var coverageEmoji string
+		switch coverageClass {
+		case "coverage-high":
+			coverageEmoji = "✅"
+		case "coverage-medium":
+			coverageEmoji = "🟡"
+		case "coverage-low":
+			coverageEmoji = "🔴"
+		default:
+			coverageEmoji = "⚪"
+		}
+
+		doc.WriteString(fmt.Sprintf("**Coverage:** %s %d%% (%d/%d)\n\n", coverageEmoji, coveragePercent, pkg.TestedElements, pkg.TotalElements))
+	}
+
 	// импорты
 	if len(pkg.Imports) > 0 {
 		doc.WriteString("**Imports:**\n")
