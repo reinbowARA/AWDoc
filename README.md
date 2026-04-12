@@ -206,9 +206,9 @@ The analyzer combines multiple factors to identify god objects:
 
 ### High Priority
 
-- [x] Basic HTML output with responsive design ✅
-- [x] **Interactive Diagrams with Mermaid.js** ✅
-- [x] **Coverage Information in Documentation** ✅
+- [x] Basic HTML output with responsive design
+- [x] **Interactive Diagrams with Mermaid.js**
+- [x] **Coverage Information in Documentation**
 - [ ] Support for multiple languages (Python, Rust, C++, etc.)
 
 ### Medium Priority
