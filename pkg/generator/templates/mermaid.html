@@ -1,0 +1,32 @@
+{{define "mermaid_deps"}}
+    {{if .}}
+    <div class="mermaid">
+        graph LR
+        {{range $pkg, $deps := .}}
+        {{range $deps}}
+        {{$pkg}} --> {{.}}
+        {{end}}
+        {{end}}
+    </div>
+    {{end}}
+{{end}}
+
+{{define "mermaid_layers"}}
+    {{if .}}
+    <div class="mermaid">
+        graph TD
+        {{range $i, $layer := .}}
+        Layer{{$i}}["Layer {{$i}}
+        {{range $layer}}
+        <br/>{{.}}
+        {{end}}
+        "]
+        {{end}}
+        {{range $i, $layer := .}}
+        {{if gt $i 0}}
+        Layer{{sub $i 1}} --> Layer{{$i}}
+        {{end}}
+        {{end}}
+    </div>
+    {{end}}
+{{end}}

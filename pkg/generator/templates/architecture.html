@@ -1,0 +1,59 @@
+{{define "architecture"}}
+    {{if .Layers}}
+      <h3>Architectural Layers</h3>
+      {{template "mermaid_layers" .Layers}}
+      <div class="layers">
+        {{range $i, $layer := .Layers}}
+        <div class="layer">
+          <div class="layer-title">Layer {{$i}}</div>
+          <ul class="layer-packages">
+            {{range $layer}}
+            <li class="layer-package">{{.}}</li>
+            {{end}}
+          </ul>
+        </div>
+        {{end}}
+      </div>
+    {{end}}
+
+    {{if .Cycles}}
+      <h3>⚠️ Circular Dependencies Detected</h3>
+      <div class="warning-box">
+        <div class="warning-title">Found {{len .Cycles}} circular dependencies</div>
+        <ul class="warning-list">
+          {{range .Cycles}}
+          <li class="warning-item">{{.}}</li>
+          {{end}}
+        </ul>
+      </div>
+    {{end}}
+
+    {{if .GodObjects}}
+      <h3>Complex Packages (God Objects)</h3>
+      <p>Packages with high complexity that might need refactoring:</p>
+      <div class="warning-box" style="background: #f8f3cd; border-color: #ffc107;">
+        <ul class="warning-list">
+          {{range .GodObjects}}
+          <li class="warning-item" style="color: #856404;">
+            <strong>{{.Name}}</strong>
+            <span class="complexity-indicator">Complexity: {{.Complexity}} | Dependencies: {{len .Dependencies}}</span>
+          </li>
+          {{end}}
+        </ul>
+      </div>
+    {{end}}
+
+    <h3>Dependency Graph</h3>
+    {{template "mermaid_deps" .Edges}}
+    <div class="dependency-graph">
+      {{range $pkg, $deps := .Edges}}
+        {{if $deps}}
+          {{range $deps}}
+          <div class="dependency-line">{{$pkg}} → {{.}}</div>
+          {{end}}
+        {{else}}
+        <div class="dependency-line">{{$pkg}} (no dependencies)</div>
+        {{end}}
+      {{end}}
+    </div>
+{{end}}

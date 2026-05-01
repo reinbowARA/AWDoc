@@ -5,37 +5,74 @@ import (
 	"awdoc/pkg/parser"
 	"fmt"
 	"html"
+	"os"
+	"path/filepath"
 	"sort"
 	"strings"
 )
 
 // HTMLGenerator генерирует документацию в формате HTML
 type HTMLGenerator struct {
-	sourceInfo *parser.SourceInfo
-	graph      *analyzer.DependencyGraph
+	sourceInfo     *parser.SourceInfo
+	graph          *analyzer.DependencyGraph
+	templates      map[string]string
+	templatesDir   string
 }
 
 // NewHTMLGenerator создает генератор HTML
 func NewHTMLGenerator(sourceInfo *parser.SourceInfo, graph *analyzer.DependencyGraph) *HTMLGenerator {
 	return &HTMLGenerator{
-		sourceInfo: sourceInfo,
-		graph:      graph,
+		sourceInfo:   sourceInfo,
+		graph:        graph,
+		templatesDir: "pkg/generator/templates",
 	}
+}
+
+// loadTemplate загружает один шаблон из файла
+func (hg *HTMLGenerator) loadTemplate(name string) (string, error) {
+	path := filepath.Join(hg.templatesDir, name+".html")
+	content, err := os.ReadFile(path)
+	if err != nil {
+		return "", err
+	}
+	return string(content), nil
+}
+
+// loadAllTemplates загружает все шаблоны
+func (hg *HTMLGenerator) loadAllTemplates() error {
+	if hg.templates == nil {
+		hg.templates = make(map[string]string)
+	}
+	
+	templates := []string{"head", "nav", "footer", "statistics", "architecture", "packages", "elements", "mermaid"}
+	
+	for _, name := range templates {
+		content, err := hg.loadTemplate(name)
+		if err != nil {
+			return fmt.Errorf("failed to load template %s: %v", name, err)
+		}
+		hg.templates[name] = content
+	}
+	return nil
 }
 
 // GenerateProjectDoc генерирует полную HTML документацию проекта
 func (hg *HTMLGenerator) GenerateProjectDoc() string {
+	// Загружаем шаблоны
+	if err := hg.loadAllTemplates(); err != nil {
+		return fmt.Sprintf("Error loading templates: %v", err)
+	}
+
 	var doc strings.Builder
 
-	// HTML заголовок и стили
-	doc.WriteString(hg.generateHTMLHead())
-
+	// HTML заголовок и стили - берем содержимое head.html (которое начинается с <!DOCTYPE html>)
+	doc.WriteString(hg.templates["head"])
 	// открываем body
 	doc.WriteString("<body>\n")
 	doc.WriteString("  <div class=\"container\">\n")
 
 	// навигация
-	doc.WriteString(hg.generateNavigation())
+	doc.WriteString(hg.templates["nav"])
 
 	// основной контент
 	doc.WriteString("    <main class=\"content\">\n")
@@ -68,553 +105,13 @@ func (hg *HTMLGenerator) GenerateProjectDoc() string {
 	doc.WriteString("    </main>\n")
 
 	// footer
-	doc.WriteString(hg.generateFooter())
+	doc.WriteString(hg.templates["footer"])
 
 	doc.WriteString("  </div>\n")
 	doc.WriteString("</body>\n")
 	doc.WriteString("</html>\n")
 
 	return doc.String()
-}
-
-// generateHTMLHead генерирует head раздел HTML
-func (hg *HTMLGenerator) generateHTMLHead() string {
-	return `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background: #f5f5f5;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            background: white;
-            box-shadow: 0 0 10px rgba(0,0,0,0.1);
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        nav {
-            background: #f8f9fa;
-            border-bottom: 1px solid #e9ecef;
-            padding: 1rem 2rem;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-
-        nav ul {
-            list-style: none;
-            display: flex;
-            gap: 2rem;
-            flex-wrap: wrap;
-        }
-
-        nav a {
-            color: #667eea;
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.3s;
-        }
-
-        nav a:hover {
-            color: #764ba2;
-        }
-
-        .content {
-            padding: 2rem;
-        }
-
-        section {
-            margin-bottom: 3rem;
-        }
-
-        h1 {
-            font-size: 2.5rem;
-            margin-bottom: 0.5rem;
-            color: white;
-        }
-
-        h2 {
-            font-size: 2rem;
-            margin-bottom: 1.5rem;
-            padding-bottom: 0.5rem;
-            border-bottom: 2px solid #667eea;
-            color: #333;
-        }
-
-        h3 {
-            font-size: 1.5rem;
-            margin-top: 2rem;
-            margin-bottom: 1rem;
-            color: #555;
-        }
-
-        h4 {
-            font-size: 1.2rem;
-            margin-top: 1.5rem;
-            margin-bottom: 0.8rem;
-            color: #666;
-        }
-
-        .subtitle {
-            font-size: 1.2rem;
-            opacity: 0.95;
-        }
-
-        .package {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 1.5rem;
-            margin-bottom: 2rem;
-            border-radius: 4px;
-        }
-
-        .package-name {
-            font-size: 1.3rem;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-            font-family: 'Courier New', monospace;
-        }
-
-        .package-description {
-            color: #666;
-            margin-bottom: 1rem;
-        }
-
-        .imports {
-            margin-bottom: 1.5rem;
-        }
-
-        .imports-title {
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #555;
-        }
-
-        .import-list {
-            list-style: none;
-            padding-left: 1rem;
-        }
-
-        .import-item {
-            color: #667eea;
-            margin: 0.3rem 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            font-weight: 600;
-            display: inline-block;
-            background: #f0f4f8;
-            padding: 0.2rem 0.5rem;
-            border-radius: 3px;
-            margin: 0.2rem 0.4rem 0.2rem 0;
-        }
-
-        .elements {
-            margin-top: 1.5rem;
-        }
-
-        .element-type {
-            font-weight: bold;
-            color: #667eea;
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-        }
-
-        .element-list {
-            list-style: none;
-            padding-left: 1rem;
-        }
-
-        .element-item {
-            margin: 0.8rem 0;
-            padding: 0.8rem;
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 4px;
-        }
-
-        .element-name {
-            font-family: 'Courier New', monospace;
-            font-weight: bold;
-            color: #333;
-        }
-
-        .element-type-badge {
-            display: inline-block;
-            background: #667eea;
-            color: white;
-            padding: 0.2rem 0.6rem;
-            border-radius: 3px;
-            font-size: 0.85rem;
-            margin-left: 0.5rem;
-        }
-
-        .element-signature {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 0.8rem;
-            margin: 0.5rem 0;
-            border-radius: 4px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            overflow-x: auto;
-        }
-
-        .element-doc {
-            color: #666;
-            margin-top: 0.5rem;
-            font-size: 0.95rem;
-        }
-
-        .layers {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 4px;
-            padding: 1.5rem;
-        }
-
-        .layer {
-            margin-bottom: 1.5rem;
-            padding: 1rem;
-            background: #f8f9fa;
-            border-left: 3px solid #667eea;
-            border-radius: 4px;
-        }
-
-        .layer-title {
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-
-        .layer-packages {
-            list-style: none;
-            padding-left: 1rem;
-        }
-
-        .layer-package {
-            color: #666;
-            margin: 0.3rem 0;
-            font-family: 'Courier New', monospace;
-        }
-
-        .warning-box {
-            background: #fff3cd;
-            border-left: 4px solid #ffc107;
-            padding: 1rem;
-            margin: 1rem 0;
-            border-radius: 4px;
-        }
-
-        .warning-title {
-            font-weight: bold;
-            color: #856404;
-            margin-bottom: 0.5rem;
-        }
-
-        .warning-list {
-            list-style: none;
-            padding-left: 1rem;
-        }
-
-        .warning-item {
-            color: #856404;
-            margin: 0.5rem 0;
-        }
-
-        .complexity-indicator {
-            display: inline-block;
-            padding: 0.3rem 0.8rem;
-            background: #f8d7da;
-            color: #721c24;
-            border-radius: 3px;
-            font-size: 0.85rem;
-        }
-
-        .dependency-graph {
-            background: #f8f9fa;
-            border: 1px solid #e9ecef;
-            padding: 1.5rem;
-            border-radius: 4px;
-            overflow-x: auto;
-        }
-
-        .dependency-line {
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            color: #666;
-            margin: 0.3rem 0;
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin: 1rem 0;
-        }
-
-        .stat-card {
-            background: white;
-            border: 1px solid #e9ecef;
-            border-radius: 4px;
-            padding: 1.5rem;
-            text-align: center;
-        }
-
-        .stat-number {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        footer {
-            background: #f8f9fa;
-            border-top: 1px solid #e9ecef;
-            padding: 2rem;
-            text-align: center;
-            color: #666;
-            font-size: 0.9rem;
-        }
-
-        code {
-            background: #f4f4f4;
-            padding: 0.2rem 0.4rem;
-            border-radius: 3px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        .coverage-badge {
-            display: inline-block;
-            padding: 0.25rem 0.6rem;
-            border-radius: 3px;
-            font-size: 0.8rem;
-            font-weight: 500;
-            margin: 0.2rem 0;
-        }
-
-        .coverage-high {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .coverage-medium {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .coverage-low {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .coverage-none {
-            background: #e2e3e5;
-            color: #383d41;
-        }
-
-        .no-test-warning {
-            display: inline-block;
-            background: #f8d7da;
-            color: #721c24;
-            padding: 0.2rem 0.5rem;
-            border-radius: 3px;
-            font-size: 0.8rem;
-            margin-left: 0.5rem;
-            font-weight: bold;
-        }
-
-        .coverage-bar {
-            width: 100%;
-            height: 6px;
-            background: #e9ecef;
-            border-radius: 3px;
-            overflow: hidden;
-            margin: 0.5rem 0;
-        }
-
-        .coverage-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            transition: width 0.3s ease;
-        }
-
-        .collapsible-header {
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            user-select: none;
-            padding: 0.5rem;
-            border-radius: 3px;
-            transition: background 0.2s ease;
-        }
-
-        .collapsible-header:hover {
-            background: #f0f0f0;
-        }
-
-        .collapsible-header.active {
-            background: #e8e8e8;
-        }
-
-        .toggle-icon {
-            display: inline-block;
-            margin-right: 0.5rem;
-            width: 1.2em;
-            height: 1.2em;
-            transition: transform 0.3s ease;
-        }
-
-        .toggle-icon.collapsed {
-            transform: rotate(90deg);
-        }
-
-        .collapsible-content {
-            display: none;
-            padding: 0.8rem;
-            background: #fafafa;
-            border-left: 2px solid #ddd;
-            margin-left: 1rem;
-            margin-top: 0.5rem;
-            border-radius: 3px;
-        }
-
-        .collapsible-content.show {
-            display: block;
-        }
-
-        .struct-field {
-            padding: 0.4rem 0;
-            font-family: 'Courier New', monospace;
-            font-size: 0.95rem;
-        }
-
-        .struct-field-name {
-            font-weight: 500;
-            color: #667eea;
-        }
-
-        .struct-field-type {
-            color: #666;
-            margin-left: 0.5rem;
-        }
-
-        .struct-fields {
-            padding: 0.5rem 0;
-            border-left: 3px solid #667eea;
-            padding-left: 1rem;
-            margin: 0.5rem 0;
-        }
-
-        .struct-field-private .struct-field-name {
-            color: #999;
-            font-style: italic;
-        }
-
-        .struct-field-doc {
-            font-size: 0.85rem;
-            color: #555;
-            margin-left: 1.5rem;
-            margin-top: 0.2rem;
-            font-style: italic;
-        }
-
-        @media (max-width: 768px) {
-            .container {
-                box-shadow: none;
-            }
-
-            h1 {
-                font-size: 1.8rem;
-            }
-
-            h2 {
-                font-size: 1.5rem;
-            }
-
-            nav ul {
-                gap: 1rem;
-            }
-
-            .stats-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .content {
-                padding: 1rem;
-            }
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script>
-        mermaid.initialize({ 
-            startOnLoad: true,
-            theme: 'default',
-            securityLevel: 'loose',
-            flowchart: { useMaxWidth: true }
-        });
-
-        // Toggle collapsible sections
-        document.addEventListener('DOMContentLoaded', function() {
-            const headers = document.querySelectorAll('.collapsible-header');
-            headers.forEach(header => {
-                header.addEventListener('click', function(e) {
-                    if (e.target.closest('a')) return; // Don't toggle if clicking a link
-                    
-                    const content = this.nextElementSibling;
-                    if (content && content.classList.contains('collapsible-content')) {
-                        content.classList.toggle('show');
-                        const icon = this.querySelector('.toggle-icon');
-                        if (icon) {
-                            icon.classList.toggle('collapsed');
-                        }
-                    }
-                });
-            });
-        });
-    </script>
-</head>
-`
-}
-
-// generateNavigation генерирует навигационное меню
-func (hg *HTMLGenerator) generateNavigation() string {
-	return `    <nav>
-      <ul>
-        <li><a href="#overview">Overview</a></li>
-        <li><a href="#packages">Packages</a></li>
-        <li><a href="#architecture">Architecture</a></li>
-        <li><a href="#statistics">Statistics</a></li>
-      </ul>
-    </nav>
-`
 }
 
 // generateProjectOverview генерирует обзор проекта
@@ -824,8 +321,8 @@ func (hg *HTMLGenerator) generateElementsHTML(elements []parser.CodeElement) str
 				html.WriteString(fmt.Sprintf("              <span class=\"element-name\">%s</span>\n", escapeHTML(elem.Name)))
 				html.WriteString(fmt.Sprintf("              <span class=\"element-type-badge\">%s</span>\n", elemType))
 
-				// Значок для методов без тестов
-				if !elem.HasTests {
+				// Значок для методов без тестов (только для функций и методов)
+				if (elem.Type == parser.ElementFunc || elem.Type == parser.ElementMethod) && !elem.HasTests {
 					html.WriteString("              <span class=\"no-test-warning\">⚠️ NO TEST</span>\n")
 				} else if elem.HasTests && elem.TestName != "" {
 					html.WriteString(fmt.Sprintf("              <span class=\"coverage-badge coverage-high\">✅ %s</span>\n", escapeHTML(elem.TestName)))
@@ -969,15 +466,6 @@ func (hg *HTMLGenerator) generateStatistics() string {
 	return html.String()
 }
 
-// generateFooter генерирует footer
-func (hg *HTMLGenerator) generateFooter() string {
-	return `    <footer>
-      <p>Generated by AWDoc - Automated Web Documentation Generator</p>
-      <p>This documentation was automatically generated from source code analysis.</p>
-    </footer>
-`
-}
-
 // escapeHTML экранирует HTML специальные символы
 func escapeHTML(s string) string {
 	return html.EscapeString(s)
@@ -1068,7 +556,7 @@ func (hg *HTMLGenerator) generateDependencyDiagram() string {
 	return diagram.String()
 }
 
-// generateLayers Diagram генерирует диаграмму архитектурных слоев
+// generateLayersDiagram генерирует диаграмму архитектурных слоев
 func (hg *HTMLGenerator) generateLayersDiagram() string {
 	if len(hg.graph.Layers) == 0 {
 		return "<p>No architectural layers found</p>\n"

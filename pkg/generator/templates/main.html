@@ -1,0 +1,34 @@
+{{define "main"}}
+<!DOCTYPE html>
+<html lang="en">
+{{template "head" .}}
+<body>
+  <div class="container">
+    {{template "nav" .}}
+    <main class="content">
+      <section id="overview">
+        <h1>API Documentation</h1>
+        <p class="subtitle">Automatically generated from source code</p>
+        {{template "statistics" .}}
+      </section>
+
+      <section id="packages">
+        <h2>Packages</h2>
+        {{template "packages" .}}
+      </section>
+
+      <section id="architecture">
+        <h2>Architecture Analysis</h2>
+        {{template "architecture" .}}
+      </section>
+
+      <section id="statistics">
+        <h2>Statistics</h2>
+        {{template "statistics" .}}
+      </section>
+    </main>
+    {{template "footer" .}}
+  </div>
+</body>
+</html>
+{{end}}

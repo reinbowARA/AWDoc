@@ -1,0 +1,48 @@
+{{define "elements"}}
+    {{range .}}
+      <div class="elements">
+        <div class="element-type">{{.TypeLabel}}</div>
+        <ul class="element-list">
+          {{range .Items}}
+          <li class="element-item">
+            <span class="element-name">{{.Name}}</span>
+            <span class="element-type-badge">{{.Type}}</span>
+            
+            {{if not .HasTests}}
+            <span class="no-test-warning">⚠️ NO TEST</span>
+            {{else if and .HasTests .TestName}}
+            <span class="coverage-badge coverage-high">✅ {{.TestName}}</span>
+            {{end}}
+            
+            {{if .Signature}}
+            <div class="element-signature">{{.Signature}}</div>
+            {{end}}
+            
+            {{if .Doc}}
+            <div class="element-doc">{{.Doc}}</div>
+            {{end}}
+            
+            {{if .Fields}}
+            <div class="collapsible-header">
+              <span class="toggle-icon collapsed">▶</span>
+              <span class="element-name">{{.Name}} Fields</span>
+            </div>
+            <div class="collapsible-content">
+              <div class="struct-fields">
+                {{range .Fields}}
+                <div class="struct-field {{if not .Exported}}struct-field-private{{end}}">
+                  <span class="struct-field-name">{{.Name}}</span> <span class="struct-field-type">{{.Type}}</span>
+                  {{if .Doc}}
+                  <div class="struct-field-doc">{{.Doc}}</div>
+                  {{end}}
+                </div>
+                {{end}}
+              </div>
+            </div>
+            {{end}}
+          </li>
+          {{end}}
+        </ul>
+      </div>
+    {{end}}
+{{end}}

@@ -1,0 +1,24 @@
+{{define "statistics"}}
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-number">{{.TotalPackages}}</div>
+          <div class="stat-label">Total Packages</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{.TotalElements}}</div>
+          <div class="stat-label">Total Elements</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{.AvgCoverage}}%</div>
+          <div class="stat-label">Avg Test Coverage</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{.CircularDeps}}</div>
+          <div class="stat-label">Circular Dependencies</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number">{{.ComplexPackages}}</div>
+          <div class="stat-label">Complex Packages</div>
+        </div>
+      </div>
+{{end}}

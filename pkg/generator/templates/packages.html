@@ -1,0 +1,45 @@
+{{define "packages"}}
+    {{range .Packages}}
+      <div class="package">
+        <div class="collapsible-header">
+          <span class="toggle-icon collapsed">▶</span>
+          <span class="package-name">{{.Name}}</span>
+        </div>
+        <div class="collapsible-content">
+          {{if .Doc}}
+          <p class="package-description">{{.Doc}}</p>
+          {{end}}
+          
+          {{if gt .TotalElements 0}}
+          <div style="margin: 1rem 0;">
+            <span class="coverage-badge {{.CoverageClass}}">📊 Coverage: {{.CoveragePercent}}% ({{.TestedElements}}/{{.TotalElements}})</span>
+            <div class="coverage-bar">
+              <div class="coverage-fill" style="width: {{.Coverage}}%;"></div>
+            </div>
+          </div>
+          {{end}}
+
+          {{if .Imports}}
+          <div class="imports">
+            <div class="imports-title">Imports:</div>
+            <ul class="import-list">
+              {{range .Imports}}
+              <li class="import-item">{{.}}</li>
+              {{end}}
+            </ul>
+          </div>
+          {{end}}
+
+          {{if .ExportedAPI}}
+          <h4>Exported Elements</h4>
+          {{template "elements" .ExportedAPI}}
+          {{end}}
+
+          {{if gt (len .Elements) (len .ExportedAPI)}}
+          <h4>Internal Elements</h4>
+          {{template "elements" .InternalElements}}
+          {{end}}
+        </div>
+      </div>
+    {{end}}
+{{end}}
