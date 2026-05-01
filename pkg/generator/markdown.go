@@ -33,6 +33,7 @@ func (mg *MarkdownGenerator) GenerateProjectDoc() string {
 	doc.WriteString("## Table of Contents\n\n")
 	doc.WriteString("- [Project Overview](#project-overview)\n")
 	doc.WriteString("- [Packages](#packages)\n")
+	doc.WriteString("- [API Requests](#api-requests)\n")
 	doc.WriteString("- [Architecture Analysis](#architecture-analysis)\n\n")
 
 	// обзор проекта
@@ -54,6 +55,10 @@ func (mg *MarkdownGenerator) GenerateProjectDoc() string {
 		pkg := mg.sourceInfo.Packages[pkgName]
 		doc.WriteString(mg.generatePackageDoc(pkg))
 	}
+
+	// API Requests (если есть)
+	doc.WriteString("## API Requests\n\n")
+	doc.WriteString(mg.generateAPISection())
 
 	// анализ архитектуры
 	doc.WriteString("## Architecture Analysis\n\n")
@@ -176,6 +181,93 @@ func (mg *MarkdownGenerator) generateElementsDoc(elements []parser.CodeElement) 
 			}
 			doc.WriteString("\n")
 		}
+	}
+
+	return doc.String()
+}
+
+// generateAPISection генерирует раздел с API запросами (с таблицей и цветами)
+func (mg *MarkdownGenerator) generateAPISection() string {
+	var doc strings.Builder
+
+	// Собираем все API запросы из всех пакетов
+	var allAPIRequests []parser.APIRequest
+	hasAPIRequests := false
+
+	for _, pkg := range mg.sourceInfo.Packages {
+		if len(pkg.APIRequests) > 0 {
+			hasAPIRequests = true
+			allAPIRequests = append(allAPIRequests, pkg.APIRequests...)
+		}
+	}
+
+	if !hasAPIRequests {
+		doc.WriteString("No API requests detected in this project.\n\n")
+		return doc.String()
+	}
+
+	// Группируем запросы по типу HTTP метода
+	httpMethods := map[string][]parser.APIRequest{
+		"GET":     {},
+		"POST":    {},
+		"PUT":     {},
+		"DELETE":  {},
+		"PATCH":   {},
+		"HEAD":    {},
+		"OPTIONS": {},
+	}
+
+	for _, req := range allAPIRequests {
+		httpMethods[req.Method] = append(httpMethods[req.Method], req)
+	}
+
+	// Выводим запросы по порядку методов
+	methodOrder := []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
+
+	// Цвета для HTTP методов
+	methodColors := map[string]string{
+		"GET":     "#28a745",   // зеленый
+		"POST":    "#007bff",   // синий
+		"PUT":     "#ffc107",   // желтый
+		"DELETE":  "#dc3545",   // красный
+		"PATCH":   "#fd7e14",   // оранжевый
+		"HEAD":    "#6f42c1",   // фиолетовый
+		"OPTIONS": "#e83e8c",   // розовый
+	}
+
+	for _, method := range methodOrder {
+		requests := httpMethods[method]
+		if len(requests) == 0 {
+			continue
+		}
+
+		doc.WriteString(fmt.Sprintf("### %s Requests\n\n", method))
+
+		// Заголовки таблицы
+		doc.WriteString("| Path | Method | Swagger Status |\n")
+		doc.WriteString("|------|--------|----------------|\n")
+
+		for _, req := range requests {
+			// Метка описан ли в Swagger
+			swaggerLabel := "❌ Not in Swagger"
+			swaggerColor := "#dc3545" // красный
+			if req.IsSwaggered {
+				swaggerLabel = "✅ In Swagger"
+				swaggerColor = "#28a745" // зеленый
+			}
+
+			// Цвет метода
+			methodColor := methodColors[method]
+
+			// Вставка с использованием HTML для цветов и выравнивания
+			doc.WriteString(fmt.Sprintf("| `%s` | <span style=\"color: %s; font-weight: bold;\">%s</span> | <span style=\"color: %s; font-weight: bold;\">%s</span> |\n",
+				req.Path, methodColor, method, swaggerColor, swaggerLabel))
+			if req.Description != "" {
+				doc.WriteString(fmt.Sprintf("| colspan=\"3\" style=\"font-size: 0.9em; color: #666;\">%s</span> |\n", escapeHTML(req.Description)))
+			}
+		}
+
+		doc.WriteString("\n")
 	}
 
 	return doc.String()

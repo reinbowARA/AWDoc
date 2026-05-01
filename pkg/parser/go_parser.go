@@ -64,6 +64,9 @@ func (gp *GoParser) Parse(filePath string) (*Package, error) {
 		}
 	}
 
+	// обнаруживаем API запросы
+	pkg.APIRequests = gp.DetectAPIRequests(file, fset, filePath, file.Name.Name)
+
 	return pkg, nil
 }
 
@@ -390,4 +393,178 @@ func (gp *GoParser) getExpectedTestName(elementName string, elemType ElementType
 	default:
 		return "Test" + elementName
 	}
+}
+
+// DetectAPIRequests обнаруживает API запросы в файле
+func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, filePath string, pkgName string) []APIRequest {
+	var apiRequests []APIRequest
+
+	// Ищем вызовы для различных фреймворков
+	ast.Inspect(file, func(node ast.Node) bool {
+		if call, ok := node.(*ast.CallExpr); ok {
+			if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
+				methodName := sel.Sel.Name
+				httpMethods := map[string]string{
+					"GET":     "GET",
+					"POST":    "POST",
+					"PUT":     "PUT",
+					"DELETE":  "DELETE",
+					"PATCH":   "PATCH",
+					"HEAD":    "HEAD",
+					"OPTIONS": "OPTIONS",
+				}
+
+				// gin gin.Context
+				if ident, ok := sel.X.(*ast.Ident); ok {
+					if ident.Name == "gin" || strings.Contains(ident.Name, "router") {
+						if method, ok := httpMethods[methodName]; ok {
+							if len(call.Args) >= 2 {
+								path := gp.extractPathFromArg(call.Args[0])
+
+								// Получаем документацию из комментариев
+								docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
+
+								apiRequests = append(apiRequests, APIRequest{
+									Name:        fmt.Sprintf("%s %s", method, path),
+									Path:        path,
+									Method:      method,
+									Description: docComment,
+									IsSwaggered: false,
+									SourceFile:  filePath,
+								})
+							}
+						}
+					}
+				}
+
+				// gin.Context / *gin.Context вызовы
+				if recv, ok := sel.X.(*ast.StarExpr); ok {
+					if ident, ok := recv.X.(*ast.Ident); ok {
+						if ident.Name == "c" || ident.Name == "ctx" || ident.Name == "ginCtx" {
+							if method, ok := httpMethods[methodName]; ok {
+								if len(call.Args) >= 2 {
+									path := gp.extractPathFromArg(call.Args[0])
+									docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
+
+									apiRequests = append(apiRequests, APIRequest{
+										Name:        fmt.Sprintf("%s %s", method, path),
+										Path:        path,
+										Method:      method,
+										Description: docComment,
+										IsSwaggered: false,
+										SourceFile:  filePath,
+									})
+								}
+							}
+						}
+					}
+				}
+
+				// echo框架: router.GET, router.POST и т.д.
+				if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "e" {
+					if method, ok := httpMethods[methodName]; ok {
+						if len(call.Args) >= 2 {
+							path := gp.extractPathFromArg(call.Args[0])
+							docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
+
+							apiRequests = append(apiRequests, APIRequest{
+								Name:        fmt.Sprintf("%s %s", method, path),
+								Path:        path,
+								Method:      method,
+								Description: docComment,
+								IsSwaggered: false,
+								SourceFile:  filePath,
+							})
+						}
+					}
+				}
+			}
+		}
+
+		// net/http: http.HandleFunc
+		if call, ok := node.(*ast.CallExpr); ok {
+			if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
+				if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "http" {
+					if sel.Sel.Name == "HandleFunc" || sel.Sel.Name == "Handle" || sel.Sel.Name == "Get" || sel.Sel.Name == "Post" {
+						if len(call.Args) >= 2 {
+							path := gp.extractPathFromArg(call.Args[0])
+							docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
+
+							apiRequests = append(apiRequests, APIRequest{
+								Name:        fmt.Sprintf("GET %s", path),
+								Path:        path,
+								Method:      "GET",
+								Description: docComment,
+								IsSwaggered: false,
+								SourceFile:  filePath,
+							})
+						}
+					}
+				}
+			}
+		}
+
+		return true
+	})
+
+	// Проверяем наличие Swagger аннотаций
+	for i := range apiRequests {
+		apiRequests[i].IsSwaggered = gp.hasSwaggerAnnotationsSimple(file)
+	}
+
+	return apiRequests
+}
+
+// extractPathFromArg извлекает путь из аргумента вызова
+func (gp *GoParser) extractPathFromArg(arg ast.Expr) string {
+	if lit, ok := arg.(*ast.BasicLit); ok {
+		return strings.Trim(lit.Value, "\"")
+	}
+	return ""
+}
+
+// extractDocCommentSimple извлекает документацию из комментариев (простая версия)
+func (gp *GoParser) extractDocCommentSimple(file *ast.File, fset *token.FileSet, pos token.Pos) string {
+	// Получаем номер строки для данной позиции
+	line := fset.Position(pos).Line
+
+	// Ищем комментарии, которые находятся непосредственно перед данной позицией
+	for _, group := range file.Comments {
+		for _, comment := range group.List {
+			commentEndLine := fset.Position(comment.End()).Line
+			if commentEndLine < line && line-commentEndLine <= 3 {
+				return strings.TrimSpace(comment.Text)
+			}
+		}
+	}
+
+	return ""
+}
+
+// hasSwaggerAnnotationsSimple проверяет наличие Swagger аннотаций в файле (без fset)
+func (gp *GoParser) hasSwaggerAnnotationsSimple(file *ast.File) bool {
+	swaggerPatterns := []string{
+		"@summary",
+		"@description",
+		"@tags",
+		"@id",
+		"@accept",
+		"@produce",
+		"@param",
+		"@success",
+		"@failure",
+		"@router",
+	}
+
+	// Проверяем комментарии в файле
+	for _, group := range file.Comments {
+		text := group.Text()
+		for _, pattern := range swaggerPatterns {
+			if strings.Contains(text, pattern) {
+				return true
+			}
+		}
+	}
+
+	return false
 }

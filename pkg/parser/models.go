@@ -50,6 +50,16 @@ const (
 	ElementInterface ElementType = "interface"
 )
 
+// APIRequest представляет API запрос (HTTP endpoint)
+type APIRequest struct {
+	Name        string // название запроса (например: "GET /api/users")
+	Path        string // путь к эндпоинту
+	Method      string // HTTP метод (GET, POST, PUT, DELETE)
+	Description string // описание из комментариев
+	IsSwaggered bool   // описан ли в Swagger
+	SourceFile  string // файл источника
+}
+
 // Package представляет пакет кода
 type Package struct {
 	Name        string
@@ -58,6 +68,8 @@ type Package struct {
 	Elements    []CodeElement   // элементы в пакете
 	Imports     map[string]bool // импорты {путь -> bool}
 	ExportedAPI []CodeElement   // только экспортируемые элементы
+	// API информация
+	APIRequests []APIRequest // список API запросов
 	// Coverage информация
 	Coverage       float64  // процент покрытия пакета (0-100)
 	TestedElements int      // количество протестированных элементов

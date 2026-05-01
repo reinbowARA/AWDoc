@@ -90,6 +90,12 @@ func (hg *HTMLGenerator) GenerateProjectDoc() string {
 	doc.WriteString(hg.generatePackagesSection())
 	doc.WriteString("      </section>\n\n")
 
+	// API Requests
+	doc.WriteString("      <section id=\"api-requests\">\n")
+	doc.WriteString("        <h2>API Requests</h2>\n")
+	doc.WriteString(hg.generateAPISection())
+	doc.WriteString("      </section>\n\n")
+
 	// архитектурный анализ
 	doc.WriteString("      <section id=\"architecture\">\n")
 	doc.WriteString("        <h2>Architecture Analysis</h2>\n")
@@ -416,6 +422,103 @@ func (hg *HTMLGenerator) generateArchitectureSection() string {
 		}
 	}
 	html.WriteString("      </div>\n")
+
+	return html.String()
+}
+
+// generateAPISection генерирует секцию с API запросами (с таблицей и цветами)
+func (hg *HTMLGenerator) generateAPISection() string {
+	var html strings.Builder
+
+	// Собираем все API запросы из всех пакетов
+	var allAPIRequests []parser.APIRequest
+	hasAPIRequests := false
+
+	for _, pkg := range hg.sourceInfo.Packages {
+		if len(pkg.APIRequests) > 0 {
+			hasAPIRequests = true
+			allAPIRequests = append(allAPIRequests, pkg.APIRequests...)
+		}
+	}
+
+	if !hasAPIRequests {
+		html.WriteString("      <p>No API requests detected in this project.</p>\n")
+		return html.String()
+	}
+
+	// Группируем запросы по типу HTTP метода
+	httpMethods := map[string][]parser.APIRequest{
+		"GET":     {},
+		"POST":    {},
+		"PUT":     {},
+		"DELETE":  {},
+		"PATCH":   {},
+		"HEAD":    {},
+		"OPTIONS": {},
+	}
+
+	for _, req := range allAPIRequests {
+		httpMethods[req.Method] = append(httpMethods[req.Method], req)
+	}
+
+	// Выводим запросы по порядку методов
+	methodOrder := []string{"GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"}
+
+	// Цвета для HTTP методов
+	methodColors := map[string]string{
+		"GET":     "#28a745",   // зеленый
+		"POST":    "#007bff",   // синий
+		"PUT":     "#ffc107",   // желтый
+		"DELETE":  "#dc3545",   // красный
+		"PATCH":   "#fd7e14",   // оранжевый
+		"HEAD":    "#6f42c1",   // фиолетовый
+		"OPTIONS": "#e83e8c",   // розовый
+	}
+
+	for _, method := range methodOrder {
+		requests := httpMethods[method]
+		if len(requests) == 0 {
+			continue
+		}
+
+		html.WriteString(fmt.Sprintf("      <h3>%s Requests</h3>\n", method))
+
+		// Заголовки таблицы
+		html.WriteString("      <div class=\"api-table-container\">\n")
+		html.WriteString("        <table class=\"api-request-table\">\n")
+		html.WriteString("          <thead>\n")
+		html.WriteString("            <tr>\n")
+		html.WriteString("              <th>Path</th>\n")
+		html.WriteString("              <th>Method</th>\n")
+		html.WriteString("              <th>Swagger Status</th>\n")
+		html.WriteString("            </tr>\n")
+		html.WriteString("          </thead>\n")
+		html.WriteString("          <tbody>\n")
+
+		methodColor := methodColors[method]
+
+		for _, req := range requests {
+			// Метка описан ли в Swagger
+			swaggerLabel := "❌ Not in Swagger"
+			swaggerColor := "#dc3545" // красный
+			swaggerClass := "not-swaggered"
+			if req.IsSwaggered {
+				swaggerLabel = "✅ In Swagger"
+				swaggerColor = "#28a745" // зеленый
+				swaggerClass = "swaggered"
+			}
+
+			html.WriteString(fmt.Sprintf("            <tr>\n"))
+			html.WriteString(fmt.Sprintf("              <td><code>%s</code></td>\n", escapeHTML(req.Path)))
+			html.WriteString(fmt.Sprintf("              <td><span class=\"http-method\" style=\"color: %s; font-weight: bold;\">%s</span></td>\n", methodColor, method))
+			html.WriteString(fmt.Sprintf("              <td><span class=\"swagger-badge %s\" style=\"color: %s;\">%s</span></td>\n", swaggerClass, swaggerColor, swaggerLabel))
+			html.WriteString("            </tr>\n")
+		}
+
+		html.WriteString("          </tbody>\n")
+		html.WriteString("        </table>\n")
+		html.WriteString("      </div>\n\n")
+	}
 
 	return html.String()
 }
