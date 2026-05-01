@@ -1,0 +1,15 @@
+builds:
+  - env:
+      - CGO_ENABLED=0
+    binary: awdoc
+    goos:
+      - linux
+      - windows
+    goarch:
+      - amd64
+archives:
+  - format: binary
+release:
+  mode: append
+checksum:
+  name_template: 'checksums.txt' # Контрольные суммы для проверки целостности
