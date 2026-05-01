@@ -13,5 +13,6 @@ archives:
   - format: binary
 release:
   mode: append
+  name_template: 'awdoc' 
 checksum:
   name_template: 'checksums.txt' # Контрольные суммы для проверки целостности
