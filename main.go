@@ -1,9 +1,9 @@
 package main
 
 import (
-	"awdoc/pkg/analyzer"
-	"awdoc/pkg/generator"
-	"awdoc/pkg/parser"
+	"github.com/reinbowARA/AWDoc/pkg/analyzer"
+	"github.com/reinbowARA/AWDoc/pkg/generator"
+	"github.com/reinbowARA/AWDoc/pkg/parser"
 	"flag"
 	"fmt"
 	"os"

@@ -1,8 +1,8 @@
 package generator
 
 import (
-	"awdoc/pkg/analyzer"
-	"awdoc/pkg/parser"
+	"github.com/reinbowARA/AWDoc/pkg/analyzer"
+	"github.com/reinbowARA/AWDoc/pkg/parser"
 )
 
 // Generator - основной интерфейс для генератора документации

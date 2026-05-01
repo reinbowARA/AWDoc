@@ -1,7 +1,7 @@
 package analyzer
 
 import (
-	"awdoc/pkg/parser"
+	"github.com/reinbowARA/AWDoc/pkg/parser"
 	"fmt"
 	"sort"
 )
