@@ -1,19 +1,23 @@
 package main
 
 import (
-	"github.com/reinbowARA/AWDoc/pkg/analyzer"
-	"github.com/reinbowARA/AWDoc/pkg/generator"
-	"github.com/reinbowARA/AWDoc/pkg/parser"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/reinbowARA/AWDoc/pkg/analyzer"
+	"github.com/reinbowARA/AWDoc/pkg/generator"
+	"github.com/reinbowARA/AWDoc/pkg/parser"
 )
+
+var version string = "latest"
 
 func main() {
 	// флаги командной строки
 	sourceDir := flag.String("source", ".", "Source code directory to analyze")
+	versionFlag := flag.Bool("version", false, "Show version information")
 	language := flag.String("lang", "go", "Programming language (go, etc.)")
 	outputFile := flag.String("output", "", "Output file path (default: output/analysis.md)")
 	outputDir := flag.String("output-dir", "output", "Output directory for documentation")
@@ -27,7 +31,10 @@ func main() {
 		printHelp()
 		os.Exit(0)
 	}
-
+    if *versionFlag {
+        fmt.Printf("version: %s\n", version)
+        os.Exit(0)
+    }
 	// валидация
 	if *sourceDir == "" {
 		fmt.Fprintf(os.Stderr, "Error: source directory is required\n")
@@ -205,8 +212,5 @@ EXAMPLES:
   awdoc -source . -output ./documentation/api.md
 
   # HTML format
-  awdoc -format html -output output/api.html
-
-VERSION:
-  AWDoc 1.0.0`)
+  awdoc -format html -output output/api.html`)
 }
