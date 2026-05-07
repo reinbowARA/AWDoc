@@ -1,41 +1,77 @@
 package generator
 
 import (
-	"github.com/reinbowARA/AWDoc/pkg/analyzer"
-	"github.com/reinbowARA/AWDoc/pkg/parser"
+	_ "embed"
 	"fmt"
 	"html"
-	"os"
-	"path/filepath"
 	"sort"
 	"strings"
+
+	"github.com/reinbowARA/AWDoc/pkg/analyzer"
+	"github.com/reinbowARA/AWDoc/pkg/parser"
 )
+
+//go:embed templates/head.html
+var headTemplate string
+
+//go:embed templates/nav.html
+var navTemplate string
+
+//go:embed templates/footer.html
+var footerTemplate string
+
+//go:embed templates/statistics.html
+var statisticsTemplate string
+
+//go:embed templates/architecture.html
+var architectureTemplate string
+
+//go:embed templates/packages.html
+var packagesTemplate string
+
+//go:embed templates/elements.html
+var elementsTemplate string
+
+//go:embed templates/mermaid.html
+var mermaidTemplate string
 
 // HTMLGenerator генерирует документацию в формате HTML
 type HTMLGenerator struct {
-	sourceInfo     *parser.SourceInfo
-	graph          *analyzer.DependencyGraph
-	templates      map[string]string
-	templatesDir   string
+	sourceInfo *parser.SourceInfo
+	graph      *analyzer.DependencyGraph
+	templates  map[string]string
 }
 
 // NewHTMLGenerator создает генератор HTML
 func NewHTMLGenerator(sourceInfo *parser.SourceInfo, graph *analyzer.DependencyGraph) *HTMLGenerator {
 	return &HTMLGenerator{
-		sourceInfo:   sourceInfo,
-		graph:        graph,
-		templatesDir: "pkg/generator/templates",
+		sourceInfo: sourceInfo,
+		graph:      graph,
 	}
 }
 
 // loadTemplate загружает один шаблон из файла
 func (hg *HTMLGenerator) loadTemplate(name string) (string, error) {
-	path := filepath.Join(hg.templatesDir, name+".html")
-	content, err := os.ReadFile(path)
-	if err != nil {
-		return "", err
+	switch name {
+	case "head":
+		return headTemplate, nil
+	case "nav":
+		return navTemplate, nil
+	case "footer":
+		return footerTemplate, nil
+	case "statistics":
+		return statisticsTemplate, nil
+	case "architecture":
+		return architectureTemplate, nil
+	case "packages":
+		return packagesTemplate, nil
+	case "elements":
+		return elementsTemplate, nil
+	case "mermaid":
+		return mermaidTemplate, nil
+	default:
+		return "", fmt.Errorf("unknown template: %s", name)
 	}
-	return string(content), nil
 }
 
 // loadAllTemplates загружает все шаблоны
@@ -43,9 +79,9 @@ func (hg *HTMLGenerator) loadAllTemplates() error {
 	if hg.templates == nil {
 		hg.templates = make(map[string]string)
 	}
-	
+
 	templates := []string{"head", "nav", "footer", "statistics", "architecture", "packages", "elements", "mermaid"}
-	
+
 	for _, name := range templates {
 		content, err := hg.loadTemplate(name)
 		if err != nil {
@@ -466,13 +502,13 @@ func (hg *HTMLGenerator) generateAPISection() string {
 
 	// Цвета для HTTP методов
 	methodColors := map[string]string{
-		"GET":     "#28a745",   // зеленый
-		"POST":    "#007bff",   // синий
-		"PUT":     "#ffc107",   // желтый
-		"DELETE":  "#dc3545",   // красный
-		"PATCH":   "#fd7e14",   // оранжевый
-		"HEAD":    "#6f42c1",   // фиолетовый
-		"OPTIONS": "#e83e8c",   // розовый
+		"GET":     "#28a745", // зеленый
+		"POST":    "#007bff", // синий
+		"PUT":     "#ffc107", // желтый
+		"DELETE":  "#dc3545", // красный
+		"PATCH":   "#fd7e14", // оранжевый
+		"HEAD":    "#6f42c1", // фиолетовый
+		"OPTIONS": "#e83e8c", // розовый
 	}
 
 	for _, method := range methodOrder {
