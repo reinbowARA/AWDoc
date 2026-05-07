@@ -414,9 +414,17 @@ func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, fileP
 					"OPTIONS": "OPTIONS",
 				}
 
-				// gin gin.Context
+				// Общий случай: роутеры - любые вызовы HTTP методов, кроме контекстов
 				if ident, ok := sel.X.(*ast.Ident); ok {
-					if ident.Name == "gin" || strings.Contains(ident.Name, "router") {
+					contextNames := []string{"c", "ctx", "ginCtx"}
+					isContext := false
+					for _, name := range contextNames {
+						if ident.Name == name {
+							isContext = true
+							break
+						}
+					}
+					if !isContext {
 						if method, ok := httpMethods[methodName]; ok {
 							if len(call.Args) >= 2 {
 								path := gp.extractPathFromArg(call.Args[0])
