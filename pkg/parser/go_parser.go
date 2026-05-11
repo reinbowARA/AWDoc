@@ -404,18 +404,10 @@ func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, fileP
 		if call, ok := node.(*ast.CallExpr); ok {
 			if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
 				methodName := sel.Sel.Name
-				httpMethods := map[string]string{
-					"GET":     "GET",
-					"POST":    "POST",
-					"PUT":     "PUT",
-					"DELETE":  "DELETE",
-					"PATCH":   "PATCH",
-					"HEAD":    "HEAD",
-					"OPTIONS": "OPTIONS",
-				}
 
-				// Общий случай: роутеры - любые вызовы HTTP методов, кроме контекстов
+				// === ИЗМЕНЕНИЕ 1: Общий блок для любых роутеров (кроме контекстов) ===
 				if ident, ok := sel.X.(*ast.Ident); ok {
+					// Проверяем что это не метод контекста (c.GET(), ctx.POST() и т.д.)
 					contextNames := []string{"c", "ctx", "ginCtx"}
 					isContext := false
 					for _, name := range contextNames {
@@ -424,18 +416,35 @@ func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, fileP
 							break
 						}
 					}
-					if !isContext {
-						if method, ok := httpMethods[methodName]; ok {
+
+					// Если это не контекст - обрабатываем как роутер
+					if !isContext && len(call.Args) >= 2 {
+						path := gp.extractPathFromArg(call.Args[0])
+						docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
+
+						apiRequests = append(apiRequests, APIRequest{
+							Name:        fmt.Sprintf("%s %s", methodName, path),
+							Path:        path,
+							Method:      methodName,
+							Description: docComment,
+							IsSwaggered: false,
+							SourceFile:  filePath,
+						})
+					}
+				}
+
+				// === ИЗМЕНЕНИЕ 2: gin.Context / *gin.Context вызовы (отдельная проверка) ===
+				if recv, ok := sel.X.(*ast.StarExpr); ok {
+					if ident, ok := recv.X.(*ast.Ident); ok {
+						if ident.Name == "c" || ident.Name == "ctx" || ident.Name == "ginCtx" {
 							if len(call.Args) >= 2 {
 								path := gp.extractPathFromArg(call.Args[0])
-
-								// Получаем документацию из комментариев
 								docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
 
 								apiRequests = append(apiRequests, APIRequest{
-									Name:        fmt.Sprintf("%s %s", method, path),
+									Name:        fmt.Sprintf("%s %s", methodName, path),
 									Path:        path,
-									Method:      method,
+									Method:      methodName,
 									Description: docComment,
 									IsSwaggered: false,
 									SourceFile:  filePath,
@@ -445,52 +454,25 @@ func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, fileP
 					}
 				}
 
-				// gin.Context / *gin.Context вызовы
-				if recv, ok := sel.X.(*ast.StarExpr); ok {
-					if ident, ok := recv.X.(*ast.Ident); ok {
-						if ident.Name == "c" || ident.Name == "ctx" || ident.Name == "ginCtx" {
-							if method, ok := httpMethods[methodName]; ok {
-								if len(call.Args) >= 2 {
-									path := gp.extractPathFromArg(call.Args[0])
-									docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
+				// === ИЗМЕНЕНИЕ 3: echo/gin/mux роутеры - расширили поддержку имен роутеров ===
+				if ident, ok := sel.X.(*ast.Ident); ok && (ident.Name == "e" || ident.Name == "r" || ident.Name == "router") {
+					if len(call.Args) >= 2 {
+						path := gp.extractPathFromArg(call.Args[0])
+						docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
 
-									apiRequests = append(apiRequests, APIRequest{
-										Name:        fmt.Sprintf("%s %s", method, path),
-										Path:        path,
-										Method:      method,
-										Description: docComment,
-										IsSwaggered: false,
-										SourceFile:  filePath,
-									})
-								}
-							}
-						}
-					}
-				}
-
-				// echo框架: router.GET, router.POST и т.д.
-				if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "e" {
-					if method, ok := httpMethods[methodName]; ok {
-						if len(call.Args) >= 2 {
-							path := gp.extractPathFromArg(call.Args[0])
-							docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
-
-							apiRequests = append(apiRequests, APIRequest{
-								Name:        fmt.Sprintf("%s %s", method, path),
-								Path:        path,
-								Method:      method,
-								Description: docComment,
-								IsSwaggered: false,
-								SourceFile:  filePath,
-							})
-						}
+						apiRequests = append(apiRequests, APIRequest{
+							Name:        fmt.Sprintf("%s %s", methodName, path),
+							Path:        path,
+							Method:      methodName,
+							Description: docComment,
+							IsSwaggered: false,
+							SourceFile:  filePath,
+						})
 					}
 				}
 			}
-		}
 
-		// net/http: http.HandleFunc
-		if call, ok := node.(*ast.CallExpr); ok {
+			// === ИЗМЕНЕНИЕ 4: net/http - исправил метод вместо жесткого "GET" ===
 			if sel, ok := call.Fun.(*ast.SelectorExpr); ok {
 				if ident, ok := sel.X.(*ast.Ident); ok && ident.Name == "http" {
 					if sel.Sel.Name == "HandleFunc" || sel.Sel.Name == "Handle" || sel.Sel.Name == "Get" || sel.Sel.Name == "Post" {
@@ -499,9 +481,9 @@ func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, fileP
 							docComment := gp.extractDocCommentSimple(file, fset, call.Pos())
 
 							apiRequests = append(apiRequests, APIRequest{
-								Name:        fmt.Sprintf("GET %s", path),
+								Name:        fmt.Sprintf("%s %s", sel.Sel.Name, path), // ИЗМЕНЕНИЕ: sel.Sel.Name вместо "GET"
 								Path:        path,
-								Method:      "GET",
+								Method:      sel.Sel.Name, // ИЗМЕНЕНИЕ: sel.Sel.Name вместо "GET"
 								Description: docComment,
 								IsSwaggered: false,
 								SourceFile:  filePath,
@@ -510,6 +492,7 @@ func (gp *GoParser) DetectAPIRequests(file *ast.File, fset *token.FileSet, fileP
 					}
 				}
 			}
+
 		}
 
 		return true
